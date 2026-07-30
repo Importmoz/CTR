@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Dict, Any
 import asyncio
@@ -68,6 +68,28 @@ async def login(username: str = Form(...), password: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def read_excel_smart(content: bytes) -> pd.DataFrame:
+    bio = io.BytesIO(content)
+    df = pd.read_excel(bio)
+    if 'USERNAME' in df.columns or 'ID CODE' in df.columns or 'CONSIGNEE' in df.columns:
+        return df
+    
+    bio.seek(0)
+    df_skip3 = pd.read_excel(bio, skiprows=3)
+    if 'USERNAME' in df_skip3.columns or 'ID CODE' in df_skip3.columns or 'CONSIGNEE' in df_skip3.columns:
+        return df_skip3
+
+    bio.seek(0)
+    df_scan = pd.read_excel(bio, header=None)
+    for idx, row in df_scan.head(10).iterrows():
+        row_str = row.astype(str).str.upper().tolist()
+        if any('ID CODE' in cell or 'CONSIGNEE' in cell for cell in row_str):
+            bio.seek(0)
+            return pd.read_excel(bio, skiprows=idx)
+            
+    bio.seek(0)
+    return pd.read_excel(bio, skiprows=3)
+
 @app.post("/upload")
 async def upload_excel(
     file: UploadFile = File(...),
@@ -77,11 +99,12 @@ async def upload_excel(
     expected_date: str = Form(...),
     payment_deadline: str = Form(""),
     dist_mode: str = Form(...),
-    filipe_target: float = Form(200000)
+    filipe_target: float = Form(200000),
+    send_whatsapp: bool = Form(False)
 ):
     try:
         content = await file.read()
-        df = pd.read_excel(io.BytesIO(content))
+        df = read_excel_smart(content)
         
         ld = datetime.strptime(loading_date, "%Y-%m-%d")
         ed = datetime.strptime(expected_date, "%Y-%m-%d")
@@ -92,7 +115,7 @@ async def upload_excel(
 
         asyncio.create_task(process_excel_bg(
             df, id_ctr, origin_sel, ld, ed, pd_date, 
-            dist_mode, filipe_target, progress_callback
+            dist_mode, filipe_target, progress_callback, send_whatsapp
         ))
         
         return {"success": True, "message": "Processamento iniciado", "id_ctr": id_ctr}
@@ -140,7 +163,7 @@ async def download_csv(id_ctr: str):
         df = pd.DataFrame(queue)
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
-        return fastapi.responses.StreamingResponse(
+        return StreamingResponse(
             iter([csv_buffer.getvalue()]),
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=Relatorio_WhatsApp_{id_ctr}.csv"}
@@ -158,6 +181,7 @@ async def read_settings():
         'template_notas_regras_pago', 'template_notas_regras_pagamento',
         'template_banco_jupiter', 'template_banco_filipe',
         'template_levantamento', 'template_levantamento_nota',
+        'template_lembrete_1', 'template_lembrete_2',
         'bank_info_jupiter', 'bank_info_filipe'
     ]
     res = {}

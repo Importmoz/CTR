@@ -17,7 +17,7 @@ from core.logger import get_logger
 
 hti = Html2Image(custom_flags=['--no-sandbox', '--disable-setuid-sandbox', '--headless', '--disable-gpu'])
 
-async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback):
+async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback, send_whatsapp=False):
     try:
         get_logger("BackgroundProcessor").info(f"Iniciando processamento background para {id_ctr}")
         save_setting(f"proc_status_{id_ctr}", "running")
@@ -87,11 +87,11 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
         group_sums = df_export.groupby('ID_CODE')['TOTAL_AMOUNT'].sum().reset_index()
         group_sums = group_sums.sort_values('TOTAL_AMOUNT', ascending=False).reset_index(drop=True)
         selected_ids = []
-        if dist_mode == "FILIPE":
+        if dist_mode in ["FILIPE", "Tudo para FILIPE"]:
             selected_ids = df_export['ID_CODE'].unique().tolist()
-        elif dist_mode == "JUPITER":
+        elif dist_mode in ["JUPITER", "Tudo para JUPITER"]:
             selected_ids = []
-        elif dist_mode == "Meta FILIPE":
+        elif dist_mode in ["Meta FILIPE", "Meta FILIPE (valor desejado)"]:
             target_min = filipe_target
             target_max = filipe_target + 10_000
             shuffled_indices = list(group_sums.index)
@@ -141,10 +141,102 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
             shutil.rmtree(id_ctr_root)
         os.makedirs(info_dir, exist_ok=True)
         
+        export_columns_order = [
+            "LIST_CODE", "ID_CODE", "NAME", "PHONE_NUMBER", "ORDER_NUMBER",
+            "CARGO_DESCRIPTION", "CBM", "UNIT_CBM", "TOTAL_AMOUNT", "PACKAGES", "BANK_IN"
+        ]
+        df_export = df_export[export_columns_order]
+        
+        info_columns = ["ID_CTR", "ORIGEM", "LOADING", "EXPECTED", "LIMITE"]
+        df_info = pd.DataFrame([{
+            "ID_CTR": id_ctr,
+            "ORIGEM": origin_sel,
+            "LOADING": loading_date.strftime("%Y-%m-%d") if loading_date else "",
+            "EXPECTED": expected_date.strftime("%Y-%m-%d") if expected_date else "",
+            "LIMITE": payment_deadline.strftime("%Y-%m-%d") if payment_deadline else ""
+        }])
+        
+        output_genlist = io.BytesIO()
+        with pd.ExcelWriter(output_genlist, engine='xlsxwriter') as writer2:
+            df_export.to_excel(writer2, index=False, sheet_name='JUPITER')
+            df_info.to_excel(writer2, index=False, sheet_name='INFO')
+            workbook2 = writer2.book
+            worksheet_jupiter = writer2.sheets['JUPITER']
+            center_format_jup = workbook2.add_format({'align': 'center', 'valign': 'vcenter'})
+            for i, col in enumerate(df_export.columns):
+                max_len = max(df_export[col].fillna('').astype(str).map(len).max(), len(col)) + 1
+                worksheet_jupiter.set_column(i, i, max_len, center_format_jup)
+            merge_cols_gen = ['LIST_CODE', 'ID_CODE', 'NAME', 'PHONE_NUMBER']
+            merge_indices_gen = [df_export.columns.get_loc(col) for col in merge_cols_gen if col in df_export.columns]
+            current_values_gen = {idx: None for idx in merge_indices_gen}
+            start_rows_gen = {idx: 1 for idx in merge_indices_gen}
+            for row_idx in range(len(df_export)):
+                excel_row = row_idx + 1
+                for col_idx in merge_indices_gen:
+                    cell_value = str(df_export.iloc[row_idx, col_idx])
+                    if current_values_gen[col_idx] != cell_value:
+                        if current_values_gen[col_idx] is not None and start_rows_gen[col_idx] < excel_row:
+                            worksheet_jupiter.merge_range(start_rows_gen[col_idx], col_idx, excel_row - 1, col_idx, current_values_gen[col_idx], center_format_jup)
+                        current_values_gen[col_idx] = cell_value
+                        start_rows_gen[col_idx] = excel_row
+            for col_idx in merge_indices_gen:
+                if current_values_gen[col_idx] is not None and start_rows_gen[col_idx] < len(df_export) + 1:
+                    worksheet_jupiter.merge_range(start_rows_gen[col_idx], col_idx, len(df_export), col_idx, current_values_gen[col_idx], center_format_jup)
+            
+            worksheet_info = writer2.sheets['INFO']
+            center_format_info = workbook2.add_format({'align': 'center', 'valign': 'vcenter'})
+            for i, col in enumerate(df_info.columns):
+                max_len = max(df_info[col].fillna('').astype(str).map(len).max(), len(col)) + 1
+                worksheet_info.set_column(i, i, max_len, center_format_info)
+            
+            last_row_jup = len(df_export)
+            if last_row_jup > 0:
+                worksheet_jupiter.data_validation(1, 10, last_row_jup, 10, {'validate': 'list', 'source': ['FILIPE', 'JUPITER', '?'], 'dropdown': True})
+        output_genlist.seek(0)
+        
+        output_submitted = io.BytesIO()
+        with pd.ExcelWriter(output_submitted, engine='xlsxwriter') as writer1:
+            df_submitted.to_excel(writer1, index=False, sheet_name='Sheet1')
+            workbook1 = writer1.book
+            worksheet1 = writer1.sheets['Sheet1']
+            center_format = workbook1.add_format({'align': 'center', 'valign': 'vcenter'})
+            for i, col in enumerate(df_submitted.columns):
+                max_len = max(df_submitted[col].fillna('').astype(str).map(len).max(), len(col)) + 1
+                worksheet1.set_column(i, i, max_len, center_format)
+            
+            merge_cols = ['NO', 'ID CODE', 'CONSIGNEE', 'PHONE NUMBER']
+            merge_indices = [df_submitted.columns.get_loc(col) for col in merge_cols if col in df_submitted.columns]
+            current_values = {idx: None for idx in merge_indices}
+            start_rows = {idx: 1 for idx in merge_indices}
+            for row_idx in range(len(df_submitted)):
+                excel_row = row_idx + 1
+                for col_idx in merge_indices:
+                    cell_value = str(df_submitted.iloc[row_idx, col_idx])
+                    if current_values[col_idx] != cell_value:
+                        if current_values[col_idx] is not None and start_rows[col_idx] < excel_row:
+                            worksheet1.merge_range(start_rows[col_idx], col_idx, excel_row - 1, col_idx, current_values[col_idx], center_format)
+                        current_values[col_idx] = cell_value
+                        start_rows[col_idx] = excel_row
+            for col_idx in merge_indices:
+                if current_values[col_idx] is not None and start_rows[col_idx] < len(df_submitted) + 1:
+                    worksheet1.merge_range(start_rows[col_idx], col_idx, len(df_submitted), col_idx, current_values[col_idx], center_format)
+        output_submitted.seek(0)
+        
+        with open(os.path.join(id_ctr_root, f"SubmitedList_{id_ctr}.xlsx"), "wb") as f:
+            f.write(output_submitted.getvalue())
+        
+        genlist_path = os.path.join(info_dir, f"{id_ctr}.xlsx")
+        with open(genlist_path, "wb") as f:
+            f.write(output_genlist.getvalue())
+            
         detailed_data_bg, _ = process_and_clean_data(df_submitted)
         formatted_list_path = export_with_formatting(detailed_data_bg, id_ctr)
         if os.path.exists(formatted_list_path):
             shutil.copy(formatted_list_path, os.path.join(pagamentos_root, f"Lista_{id_ctr}.xlsx"))
+            try:
+                os.remove(formatted_list_path)
+            except:
+                pass
             
         container_number = f"{id_ctr}TH"
         seen_ids = set()
@@ -174,7 +266,10 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
             combined_cargo = ", ".join(set([str(o['CARGO_DESCRIPTION']) for o in client_orders]))
             combined_total = sum(o['TOTAL_AMOUNT'] for o in client_orders)
             
-            dir_name = f"{list_code}-{str(name).replace(' ', '_')}"
+            import re
+            safe_name = re.sub(r'[\\/*?:"<>|]', "", str(name)).strip()
+            safe_list_code = re.sub(r'[\\/*?:"<>|]', "", str(list_code)).strip()
+            dir_name = f"{safe_list_code}-{safe_name.replace(' ', '_')}"
             client_dir = os.path.join(pagamentos_root, dir_name)
             os.makedirs(client_dir, exist_ok=True)
             
@@ -191,7 +286,8 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
             with open(os.path.join(client_dir, md_filename), "w", encoding="utf-8") as f:
                 f.write(msg)
                 
-            html_table = generate_html_table(client_orders, container_number, bank_info)
+            table_bank_info = None if combined_total == 0 else bank_info
+            html_table = generate_html_table(client_orders, container_number, table_bank_info)
             img_filename = f"{id_code_str}-{id_ctr}.png"
             hti.output_path = info_dir
             
@@ -245,9 +341,15 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
             await progress_callback(percent, 100, f"Processado {idx + 1} de {total_clients}: {name}")
             
         save_session(id_ctr, queue)
-        shutil.make_archive(id_ctr_root, 'zip', id_ctr_root)
+        shutil.make_archive(id_ctr_root, 'zip', root_dir=id_ctr_root, base_dir="PAGAMENTOS")
         save_setting(f"proc_status_{id_ctr}", "completed")
         get_logger("BackgroundProcessor").info(f"Processamento concluído com sucesso para {id_ctr}")
+        
+        if send_whatsapp:
+            await progress_callback(99, 100, "A iniciar envio de WhatsApp em segundo plano...")
+            from api.main import start_sending
+            asyncio.create_task(start_sending(id_ctr=id_ctr, send_mode="normal"))
+
         await progress_callback(100, 100, "Concluído!")
         
     except Exception as e:

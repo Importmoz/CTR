@@ -1,7 +1,13 @@
 def generate_html_table(orders, container_number, bank_info=None):
-    total_cbm = sum(o.get('CBM', 0) for o in orders)
-    total_amount = sum(o.get('TOTAL_AMOUNT', 0) for o in orders)
-    total_packages = sum(o.get('PACKAGES', 0) for o in orders)
+    def safe_float(v):
+        try:
+            return float(str(v).replace(',', '').replace('$', '').replace('[MZN]', '').strip() or 0)
+        except ValueError:
+            return 0.0
+            
+    total_cbm = sum(safe_float(o.get('CBM', 0)) for o in orders)
+    total_amount = sum(safe_float(o.get('TOTAL_AMOUNT', 0)) for o in orders)
+    total_packages = sum(int(safe_float(o.get('PACKAGES', 0))) for o in orders)
 
     bank_html = ""
     if bank_info:
@@ -79,10 +85,10 @@ def generate_html_table(orders, container_number, bank_info=None):
 
         table_html += f"            <td>{order.get('ORDER_NUMBER', '')}</td>\n"
         table_html += f"            <td>{order.get('CARGO_DESCRIPTION', '')}</td>\n"
-        table_html += f"            <td class='text-right'>{order.get('CBM', 0):.2f}</td>\n"
-        table_html += f"            <td class='text-right'>{order.get('UNIT_CBM', 0):.2f}</td>\n"
-        table_html += f"            <td class='text-right highlight'>{order.get('TOTAL_AMOUNT', 0):,.2f} Mt</td>\n"
-        table_html += f"            <td class='text-center'>{order.get('PACKAGES', 0)}</td>\n"
+        table_html += f"            <td class='text-right'>{safe_float(order.get('CBM', 0)):.2f}</td>\n"
+        table_html += f"            <td class='text-right'>{safe_float(order.get('UNIT_CBM', 0)):.2f}</td>\n"
+        table_html += f"            <td class='text-right highlight'>{safe_float(order.get('TOTAL_AMOUNT', 0)):,.2f} Mt</td>\n"
+        table_html += f"            <td class='text-center'>{int(safe_float(order.get('PACKAGES', 0)))}</td>\n"
         table_html += "        </tr>\n"
 
     table_html += f"""

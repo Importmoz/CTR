@@ -35,5 +35,5 @@ desktop.ini
 # Streamlit temp
 .streamlit
 
-# Jupyter
-.ipynb_checkpoints/
+# Temp & Old backups
+EXTRUTURA_CTR_OLD/
