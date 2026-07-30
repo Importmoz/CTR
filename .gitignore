@@ -1,0 +1,39 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.local
+.venv/
+venv/
+env/
+.python-version
+db/
+*.sqlite3
+*.db
+*.zip
+*.xlsx
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.pytest_cache/
+htmlcov/
+dist/
+build/
+*.egg-info/
+*.egg
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Python virtual envs
+.Python
+
+# Streamlit temp
+.streamlit
+
+# Jupyter
+.ipynb_checkpoints/

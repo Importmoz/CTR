@@ -1,0 +1,10 @@
+streamlit==1.35.0
+streamlit-aggrid==0.3.4.post3
+openpyxl==3.1.2
+pandas
+numpy
+xlsxwriter
+html2image
+Pillow
+requests
+python-dotenv

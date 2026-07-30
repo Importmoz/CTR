@@ -1,0 +1,22 @@
+# Ficheiros e Pastas de Configuração
+.git
+.gitignore
+.env
+__pycache__/
+*.pyc
+venv/
+env/
+.venv/
+
+# Pastas de Dados Locais e Temporários
+# NÃO enviar as bases de dados e logs locais pois estes 
+# devem ser geridos pelos Volumes do Coolify
+db/
+logs/
+
+# Pastas geradas durante o processo
+*.zip
+*.png
+*.jpg
+*.xlsx
+*.csv
