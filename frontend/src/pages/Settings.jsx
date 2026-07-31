@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3 } from 'lucide-react';
+import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle } from 'lucide-react';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
