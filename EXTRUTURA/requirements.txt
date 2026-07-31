@@ -11,3 +11,5 @@ fastapi
 uvicorn
 websockets
 python-multipart
+google-api-python-client
+google-auth

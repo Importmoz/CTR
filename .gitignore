@@ -37,3 +37,5 @@ desktop.ini
 
 # Temp & Old backups
 EXTRUTURA_CTR_OLD/
+google-oauth.json
+*.json.secret

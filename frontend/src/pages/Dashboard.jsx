@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [formData, setFormData] = useState({
     id_ctr: '',
     origin_sel: 'CHINA',
+    dest_sel: 'MAPUTO',
     loading_date: '',
     expected_date: '',
     payment_deadline: '',
@@ -16,6 +17,7 @@ export default function Dashboard() {
     send_whatsapp: false
   });
   const [isOriginOpen, setIsOriginOpen] = useState(false);
+  const [isDestOpen, setIsDestOpen] = useState(false);
   const [isDistModeOpen, setIsDistModeOpen] = useState(false);
   const [status, setStatus] = useState('idle'); // idle, uploading, processing, completed, error
   const [progress, setProgress] = useState({ percent: 0, message: '' });
@@ -182,6 +184,37 @@ export default function Dashboard() {
                       <div key={opt} className="dropdown-item"
                         style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.origin_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.origin_sel === opt ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
                         onClick={() => { setFormData({...formData, origin_sel: opt}); setIsOriginOpen(false); }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ width: '125px', position: 'relative' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>Destino</label>
+                <div 
+                  className="input-wrapper" 
+                  style={{ width: '125px', cursor: 'pointer', justifyContent: 'space-between', padding: '8px 12px' }}
+                  onClick={() => setIsDestOpen(!isDestOpen)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MapPin size={18} color="var(--primary)" />
+                    <span style={{ fontSize: '14px' }}>{formData.dest_sel}</span>
+                  </div>
+                  <ChevronDown size={16} color="var(--text-muted)" />
+                </div>
+                {isDestOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, width: '100%', marginTop: '4px',
+                    background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)',
+                    borderRadius: '12px', overflow: 'hidden', zIndex: 50,
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    {['MAPUTO', 'NACALA'].map(opt => (
+                      <div key={opt} className="dropdown-item"
+                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.dest_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.dest_sel === opt ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                        onClick={() => { setFormData({...formData, dest_sel: opt}); setIsDestOpen(false); }}
                       >
                         {opt}
                       </div>

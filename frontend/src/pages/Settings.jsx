@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, Key, MessageSquare, Building2 } from 'lucide-react';
+import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3 } from 'lucide-react';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
-    whatchimp_api_token: '',
-    whatchimp_phone_id: '',
     template_alerta_carga_pagar: '',
     template_alerta_carga_pago: '',
     template_notas_regras_pago: '',
@@ -13,12 +11,11 @@ export default function Settings() {
     template_banco_filipe: '',
     template_levantamento: '',
     template_levantamento_nota: '',
-    bank_info_jupiter: '',
-    bank_info_filipe: ''
+    google_api_json: '',
   });
   const [resetCode, setResetCode] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
-  const [statusMsg, setStatusMsg] = useState({ text: '', type: '' }); // type: 'success' | 'error'
+  const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
   const [editableFields, setEditableFields] = useState({});
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export default function Settings() {
       });
       if (res.ok) {
         setStatusMsg({ text: 'Configurações guardadas com sucesso!', type: 'success' });
-        setTimeout(() => setStatusMsg({ text: '', type: '' }), 3000);
+        setTimeout(() => setStatusMsg({ text: '', type: '' }), 4000);
       }
     } catch (err) {
       setStatusMsg({ text: 'Erro ao guardar configurações.', type: 'error' });
@@ -79,107 +76,263 @@ export default function Settings() {
     }
   };
 
+  const renderInput = (key, label, placeholder) => (
+    <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: '250px' }}>
+      <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+        <span>{label}</span>
+        <Edit3 size={14} style={{ opacity: editableFields[key] ? 1 : 0.4 }} />
+      </label>
+      <div className={`input-wrapper ${editableFields[key] ? 'editing' : ''}`} style={{ transition: 'all 0.3s' }}>
+        <input 
+          type="text" 
+          className="transparent-input" 
+          value={settings[key] || ''} 
+          onChange={e => setSettings({...settings, [key]: e.target.value})} 
+          placeholder={placeholder} 
+          readOnly={!editableFields[key]} 
+          onDoubleClick={() => setEditableFields({...editableFields, [key]: true})} 
+          onBlur={() => setEditableFields({...editableFields, [key]: false})} 
+          style={{ cursor: editableFields[key] ? 'text' : 'pointer', fontSize: '14px', fontWeight: '500', padding: '10px 8px' }} 
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="container animate-fade-in">
-      <h2>⚙️ Configurações do Sistema</h2>
-      <p className="text-muted" style={{ marginBottom: '32px' }}>Altere os parâmetros do sistema sem precisar de alterar o código.</p>
+    <div className="container animate-fade-in" style={{ paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div>
+          <h2 style={{ background: 'linear-gradient(90deg, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            ⚙️ Configurações
+          </h2>
+          <p className="text-muted" style={{ marginTop: '4px' }}>Faça duplo-clique nos campos de template para os editar.</p>
+        </div>
+        
+        <button onClick={handleSave} className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '16px', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <Save size={18} /> Guardar Alterações
+        </button>
+      </div>
 
       {statusMsg.text && (
-        <div style={{
-          padding: '12px 16px',
-          borderRadius: '8px',
+        <div className="animate-fade-in" style={{
+          padding: '16px 20px',
+          borderRadius: '12px',
           marginBottom: '24px',
-          background: statusMsg.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-          color: statusMsg.type === 'success' ? 'var(--success)' : 'var(--danger)',
-          border: `1px solid ${statusMsg.type === 'success' ? 'var(--success)' : 'var(--danger)'}`
+          background: statusMsg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          color: statusMsg.type === 'success' ? '#34d399' : '#f87171',
+          border: `1px solid ${statusMsg.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
-          {statusMsg.text}
+          {statusMsg.type === 'success' ? <Save size={20} /> : <AlertTriangle size={20} />}
+          <span style={{ fontWeight: '500' }}>{statusMsg.text}</span>
         </div>
       )}
 
-      <form onSubmit={handleSave} className="flex-col gap-6">
-        <div className="glass-panel">
-          <h3 className="flex-row items-center gap-2" style={{ marginBottom: '16px' }}><Key size={20} /> Chaves da API WhatsApp</h3>
-          <div className="flex-col gap-4">
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>WhatChimp API Token</label>
-              <input type="password" className="glass-input" value={settings.whatchimp_api_token} onChange={e => setSettings({...settings, whatchimp_api_token: e.target.value})} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>WhatChimp Phone Number ID</label>
-              <input type="text" className="glass-input" value={settings.whatchimp_phone_id} onChange={e => setSettings({...settings, whatchimp_phone_id: e.target.value})} />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel">
-          <h3 className="flex-row items-center gap-2" style={{ marginBottom: '16px' }}><MessageSquare size={20} /> Templates do WhatsApp</h3>
-          <div className="flex-row gap-4 flex-wrap">
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>alerta_carga_pagar</label>
-              <input type="text" className="glass-input" value={settings.template_alerta_carga_pagar} onChange={e => setSettings({...settings, template_alerta_carga_pagar: e.target.value})} placeholder="409806" readOnly={!editableFields.alerta_carga_pagar} onDoubleClick={() => setEditableFields({...editableFields, alerta_carga_pagar: true})} onBlur={() => setEditableFields({...editableFields, alerta_carga_pagar: false})} style={{ cursor: editableFields.alerta_carga_pagar ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>alerta_carga_pago</label>
-              <input type="text" className="glass-input" value={settings.template_alerta_carga_pago} onChange={e => setSettings({...settings, template_alerta_carga_pago: e.target.value})} placeholder="409807" readOnly={!editableFields.alerta_carga_pago} onDoubleClick={() => setEditableFields({...editableFields, alerta_carga_pago: true})} onBlur={() => setEditableFields({...editableFields, alerta_carga_pago: false})} style={{ cursor: editableFields.alerta_carga_pago ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>notas_regras_pago</label>
-              <input type="text" className="glass-input" value={settings.template_notas_regras_pago} onChange={e => setSettings({...settings, template_notas_regras_pago: e.target.value})} placeholder="409400" readOnly={!editableFields.notas_regras_pago} onDoubleClick={() => setEditableFields({...editableFields, notas_regras_pago: true})} onBlur={() => setEditableFields({...editableFields, notas_regras_pago: false})} style={{ cursor: editableFields.notas_regras_pago ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>notas_regras_pagamento</label>
-              <input type="text" className="glass-input" value={settings.template_notas_regras_pagamento} onChange={e => setSettings({...settings, template_notas_regras_pagamento: e.target.value})} placeholder="409373" readOnly={!editableFields.notas_regras_pagamento} onDoubleClick={() => setEditableFields({...editableFields, notas_regras_pagamento: true})} onBlur={() => setEditableFields({...editableFields, notas_regras_pagamento: false})} style={{ cursor: editableFields.notas_regras_pagamento ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>banco_jupiter</label>
-              <input type="text" className="glass-input" value={settings.template_banco_jupiter} onChange={e => setSettings({...settings, template_banco_jupiter: e.target.value})} placeholder="409374" readOnly={!editableFields.banco_jupiter} onDoubleClick={() => setEditableFields({...editableFields, banco_jupiter: true})} onBlur={() => setEditableFields({...editableFields, banco_jupiter: false})} style={{ cursor: editableFields.banco_jupiter ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>banco_filipe</label>
-              <input type="text" className="glass-input" value={settings.template_banco_filipe} onChange={e => setSettings({...settings, template_banco_filipe: e.target.value})} placeholder="409375" readOnly={!editableFields.banco_filipe} onDoubleClick={() => setEditableFields({...editableFields, banco_filipe: true})} onBlur={() => setEditableFields({...editableFields, banco_filipe: false})} style={{ cursor: editableFields.banco_filipe ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>levantamento</label>
-              <input type="text" className="glass-input" value={settings.template_levantamento} onChange={e => setSettings({...settings, template_levantamento: e.target.value})} placeholder="412705" readOnly={!editableFields.levantamento} onDoubleClick={() => setEditableFields({...editableFields, levantamento: true})} onBlur={() => setEditableFields({...editableFields, levantamento: false})} style={{ cursor: editableFields.levantamento ? 'text' : 'pointer' }} />
-            </div>
-            <div style={{ flex: '1 1 45%' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>levantamento_nota</label>
-              <input type="text" className="glass-input" value={settings.template_levantamento_nota} onChange={e => setSettings({...settings, template_levantamento_nota: e.target.value})} placeholder="412707" readOnly={!editableFields.levantamento_nota} onDoubleClick={() => setEditableFields({...editableFields, levantamento_nota: true})} onBlur={() => setEditableFields({...editableFields, levantamento_nota: false})} style={{ cursor: editableFields.levantamento_nota ? 'text' : 'pointer' }} />
-            </div>
-          </div>
-        </div>
-
-
-        <div>
-          <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Save size={18} /> Salvar Todas as Configurações
-          </button>
-        </div>
-      </form>
-
-      <div className="glass-panel mt-6" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-        <h3 className="flex-row items-center gap-2" style={{ color: 'var(--danger)', marginBottom: '8px' }}><AlertTriangle size={20} /> Zona de Perigo (Reset do Sistema)</h3>
-        <p className="text-muted" style={{ marginBottom: '16px' }}>Atenção! Esta ação vai apagar todo o histórico de envios, configurações guardadas, pastas geradas e logs.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
         
-        <form onSubmit={handleReset} className="flex-row items-center gap-4">
-          <input 
-            type="password" 
-            placeholder="Código de Autorização" 
-            className="glass-input" 
-            value={resetCode} 
-            onChange={e => setResetCode(e.target.value)} 
-            style={{ width: '250px' }}
-          />
-          <div className="flex-row items-center gap-2">
-            <input type="checkbox" id="confirm_reset" checked={confirmReset} onChange={e => setConfirmReset(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-            <label htmlFor="confirm_reset" style={{ fontSize: '14px', cursor: 'pointer' }}>Tenho a certeza absoluta</label>
+        {/* Templates Section */}
+        <div className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+            <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '10px', borderRadius: '12px' }}>
+              <MessageSquare size={24} color="#60a5fa" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Templates do WhatsApp</h3>
+              <p className="text-muted" style={{ margin: 0, fontSize: '13px', marginTop: '2px' }}>IDs de templates aprovados na plataforma WhatChimp.</p>
+            </div>
           </div>
-          <button type="submit" className="btn" style={{ background: 'rgba(239, 68, 68, 0.2)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.5)' }}>
-            🧨 RESET TOTAL
-          </button>
-        </form>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+            
+            {/* Cargas */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Truck size={16} /> Cargas
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {renderInput('template_alerta_carga_pagar', 'Alerta Carga a Pagar', '409806')}
+                {renderInput('template_alerta_carga_pago', 'Alerta Carga Paga', '409807')}
+              </div>
+            </div>
+
+            {/* Regras */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <BookOpen size={16} /> Notas e Regras
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {renderInput('template_notas_regras_pagamento', 'Regras Pagamento', '409373')}
+                {renderInput('template_notas_regras_pago', 'Regras Pago', '409400')}
+              </div>
+            </div>
+
+            {/* Bancos */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Building2 size={16} /> Bancos
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {renderInput('template_banco_jupiter', 'Banco Jupiter', '409374')}
+                {renderInput('template_banco_filipe', 'Banco Filipe', '409375')}
+              </div>
+            </div>
+
+            {/* Levantamentos */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Banknote size={16} /> Levantamentos
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {renderInput('template_levantamento', 'Levantamento Base', '412705')}
+                {renderInput('template_levantamento_nota', 'Levantamento Nota', '412707')}
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+        {/* Integração Google Drive */}
+        <div className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '10px', borderRadius: '12px' }}>
+              <Save size={24} color="#34d399" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Integração Google Drive</h3>
+              <p className="text-muted" style={{ margin: 0, fontSize: '13px', marginTop: '2px' }}>Credenciais para fazer upload automático das folhas de cálculo para a nuvem.</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+              <span>Estado da Integração</span>
+            </label>
+            
+            {settings.google_oauth_token ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <CheckCircle size={24} color="var(--success)" />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: 0, color: 'var(--success)' }}>Conta Vinculada</h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>O sistema está pronto para fazer upload para o Google Drive automaticamente.</p>
+                </div>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '12px', padding: '6px 12px' }}
+                  onClick={async () => {
+                    const res = await fetch('http://localhost:8000/google/auth-url');
+                    const data = await res.json();
+                    if (data.success) {
+                      if (data.code_verifier) {
+                        localStorage.setItem('google_code_verifier', data.code_verifier);
+                      }
+                      window.location.href = data.url;
+                    } else {
+                      setStatusMsg({ text: data.message || 'Erro ao gerar URL.', type: 'error' });
+                    }
+                  }}
+                >
+                  Re-autenticar
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)' }}>Ainda não autorizaste a aplicação a aceder ao teu Google Drive.</p>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={async () => {
+                    const res = await fetch('http://localhost:8000/google/auth-url');
+                    const data = await res.json();
+                    if (data.success) {
+                      if (data.code_verifier) {
+                        localStorage.setItem('google_code_verifier', data.code_verifier);
+                      }
+                      window.location.href = data.url;
+                    } else {
+                      setStatusMsg({ text: data.message || 'Erro ao gerar URL. Verifica se o ficheiro google-oauth.json está na raiz.', type: 'error' });
+                    }
+                  }}
+                >
+                  Iniciar Sessão no Google
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="glass-panel" style={{ 
+          border: '1px solid rgba(239, 68, 68, 0.4)', 
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(30, 41, 59, 0.7) 100%)',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.3s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.2)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.8)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.3)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.4)'; }}
+        >
+          <div style={{ position: 'absolute', top: '-50px', right: '-50px', opacity: 0.05, transform: 'rotate(15deg)' }}>
+            <AlertTriangle size={200} color="#ef4444" />
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '10px', borderRadius: '12px' }}>
+              <AlertTriangle size={24} color="#f87171" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#f87171' }}>Zona de Perigo</h3>
+              <p className="text-muted" style={{ margin: 0, fontSize: '13px', marginTop: '2px' }}>Reset do sistema</p>
+            </div>
+          </div>
+          
+          <p style={{ color: '#cbd5e1', marginBottom: '24px', lineHeight: '1.6', fontSize: '14px', maxWidth: '800px' }}>
+            Atenção! Esta ação é destrutiva e irreversível. Vai apagar permanentemente todo o histórico de envios, 
+            ficheiros processados gerados e limpar as opções do sistema.
+          </p>
+          
+          <form onSubmit={handleReset} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px', background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px', border: '1px dashed rgba(239, 68, 68, 0.3)' }}>
+            <div className="input-wrapper" style={{ width: '250px', background: 'rgba(15, 23, 42, 0.8)' }}>
+              <input 
+                type="password" 
+                placeholder="Código Autenticação" 
+                className="transparent-input" 
+                value={resetCode} 
+                onChange={e => setResetCode(e.target.value)} 
+              />
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setConfirmReset(!confirmReset)}>
+              <div style={{ 
+                width: '20px', height: '20px', borderRadius: '6px', 
+                border: `2px solid ${confirmReset ? '#ef4444' : '#64748b'}`, 
+                background: confirmReset ? '#ef4444' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}>
+                {confirmReset && <span style={{ color: 'white', fontSize: '14px', lineHeight: 1 }}>✓</span>}
+              </div>
+              <span style={{ fontSize: '14px', color: confirmReset ? '#f8fafc' : '#94a3b8', transition: 'all 0.2s', fontWeight: confirmReset ? '500' : '400' }}>
+                Tenho a certeza absoluta
+              </span>
+            </div>
+            
+            <button type="submit" className="btn" disabled={!resetCode || !confirmReset} style={{ 
+              background: (!resetCode || !confirmReset) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.2)', 
+              color: (!resetCode || !confirmReset) ? 'rgba(239, 68, 68, 0.4)' : '#f87171', 
+              border: `1px solid ${(!resetCode || !confirmReset) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.6)'}`,
+              marginLeft: 'auto',
+              cursor: (!resetCode || !confirmReset) ? 'not-allowed' : 'pointer',
+              transition: 'all 0.3s'
+            }}>
+              🧨 EXECUTAR LIMPEZA
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
+

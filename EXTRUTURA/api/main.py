@@ -94,10 +94,11 @@ def read_excel_smart(content: bytes) -> pd.DataFrame:
     return pd.read_excel(bio, skiprows=3)
 
 @app.post("/upload")
-async def upload_excel(
+async def upload_file(
     file: UploadFile = File(...),
     id_ctr: str = Form(...),
     origin_sel: str = Form(...),
+    dest_sel: str = Form("MAPUTO"),
     loading_date: str = Form(...),
     expected_date: str = Form(...),
     payment_deadline: str = Form(""),
@@ -117,7 +118,7 @@ async def upload_excel(
             await manager.send_progress(id_ctr, progress, message)
 
         asyncio.create_task(process_excel_bg(
-            df, id_ctr, origin_sel, ld, ed, pd_date, 
+            df, id_ctr, origin_sel, dest_sel, ld, ed, pd_date, 
             dist_mode, filipe_target, progress_callback, send_whatsapp
         ))
         
@@ -146,9 +147,23 @@ async def get_session(id_ctr: str):
         return {"success": True, "queue": queue}
     raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
-@app.delete("/sessions/{id_ctr}")
-async def delete_session_api(id_ctr: str):
+class DeleteSessionRequest(BaseModel):
+    auth_code: str
+
+@app.post("/sessions/{id_ctr}/delete")
+async def delete_session_api(id_ctr: str, req: DeleteSessionRequest):
+    if req.auth_code != "792721":
+        raise HTTPException(status_code=401, detail="Código de autorização inválido")
+        
     if delete_session(id_ctr):
+        # Apagar a pasta com os dados gerados
+        id_folder = os.path.join("db", id_ctr)
+        zip_path = os.path.join("db", f"{id_ctr}.zip")
+        if os.path.exists(id_folder):
+            shutil.rmtree(id_folder)
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+            
         return {"success": True}
     raise HTTPException(status_code=500, detail="Erro ao apagar sessão")
 
@@ -177,20 +192,74 @@ class SettingsUpdate(BaseModel):
     settings: Dict[str, str]
 
 @app.get("/settings")
-async def read_settings():
+def get_settings():
     keys = [
-        'whatchimp_api_token', 'whatchimp_phone_id',
         'template_alerta_carga_pagar', 'template_alerta_carga_pago',
-        'template_notas_regras_pago', 'template_notas_regras_pagamento',
+        'template_notas_regras_pagamento', 'template_notas_regras_pago',
         'template_banco_jupiter', 'template_banco_filipe',
         'template_levantamento', 'template_levantamento_nota',
         'template_lembrete_1', 'template_lembrete_2',
-        'bank_info_jupiter', 'bank_info_filipe'
+        'bank_info_jupiter', 'bank_info_filipe',
+        'google_oauth_token'
     ]
     res = {}
     for k in keys:
-        res[k] = get_setting(k, "")
+        val = get_setting(k, "")
+        if val:
+            res[k] = val
     return res
+
+@app.get("/google/auth-url")
+def google_auth_url():
+    try:
+        from api.google_drive import get_google_flow
+        flow = get_google_flow()
+        if not flow:
+            return {"success": False, "message": "Ficheiro google-oauth.json não encontrado na raiz."}
+        
+        auth_url, _ = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent'
+        )
+        return {"success": True, "url": auth_url, "code_verifier": getattr(flow, 'code_verifier', '')}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    code_verifier: str = None
+
+@app.post("/google/callback")
+def google_callback(req: GoogleCallbackRequest):
+    try:
+        from api.google_drive import get_google_flow
+        flow = get_google_flow()
+        if not flow:
+            raise HTTPException(status_code=400, detail="Flow não configurado")
+            
+        if req.code_verifier:
+            flow.code_verifier = req.code_verifier
+            
+        flow.fetch_token(code=req.code)
+        creds = flow.credentials
+        
+        token_data = {
+            'token': creds.token,
+            'refresh_token': creds.refresh_token,
+            'token_uri': creds.token_uri,
+            'client_id': creds.client_id,
+            'client_secret': creds.client_secret,
+            'scopes': creds.scopes
+        }
+        
+        import json
+        save_setting('google_oauth_token', json.dumps(token_data))
+        return {"success": True}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "message": str(e)}
 
 @app.post("/settings")
 async def update_settings(data: SettingsUpdate):

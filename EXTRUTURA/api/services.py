@@ -17,7 +17,7 @@ from core.logger import get_logger
 
 hti = Html2Image(custom_flags=['--no-sandbox', '--disable-setuid-sandbox', '--headless', '--disable-gpu'])
 
-async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback, send_whatsapp=False):
+async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback, send_whatsapp=False):
     try:
         get_logger("BackgroundProcessor").info(f"Iniciando processamento background para {id_ctr}")
         save_setting(f"proc_status_{id_ctr}", "running")
@@ -341,6 +341,34 @@ async def process_excel_bg(df, id_ctr, origin_sel, loading_date, expected_date, 
             await progress_callback(percent, 100, f"Processado {idx + 1} de {total_clients}: {name}")
             
         save_session(id_ctr, queue)
+        
+        # Sincronizar com Google Drive se configurado
+        from api.google_drive import get_gdrive_service, create_folder, upload_file, create_local_gsheet_shortcut, upload_folder_recursive
+        gdrive_service, gdrive_email = get_gdrive_service()
+        if gdrive_service:
+            await progress_callback(95, 100, "A sincronizar pasta com o Google Drive...")
+            try:
+                maputo_folder_id = "1KVePfb9KU4nKMIj-w9hta_iQ0euIJO5J"
+                nacala_folder_id = "1KYlkMqXQaC25hxy4IaycI4HfvpQf2VAV"
+                parent_id = nacala_folder_id if "NACALA" in str(dest_sel).upper() else maputo_folder_id
+                
+                ctr_folder_id = create_folder(gdrive_service, id_ctr, parent_id)
+                pag_folder_id = create_folder(gdrive_service, "PAGAMENTOS", ctr_folder_id)
+                
+                # Sobe a Lista como GSheet
+                lista_excel_path = os.path.join(pagamentos_root, f"Lista_{id_ctr}.xlsx")
+                if os.path.exists(lista_excel_path):
+                    sheet_id = upload_file(gdrive_service, lista_excel_path, f"Lista_{id_ctr}", pag_folder_id, convert_to_gsheet=True)
+                    gsheet_path = os.path.join(pagamentos_root, f"Lista_{id_ctr}.gsheet")
+                    create_local_gsheet_shortcut(sheet_id, gsheet_path, gdrive_email)
+                    os.remove(lista_excel_path)
+                    
+                # Sobe as restantes sub-pastas (imagens e mds)
+                upload_folder_recursive(gdrive_service, pagamentos_root, pag_folder_id)
+                
+            except Exception as e:
+                get_logger("BackgroundProcessor").error(f"Erro no GDrive upload: {e}")
+                
         shutil.make_archive(id_ctr_root, 'zip', root_dir=id_ctr_root, base_dir="PAGAMENTOS")
         save_setting(f"proc_status_{id_ctr}", "completed")
         get_logger("BackgroundProcessor").info(f"Processamento concluído com sucesso para {id_ctr}")

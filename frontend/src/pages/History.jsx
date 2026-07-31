@@ -59,20 +59,37 @@ export default function History() {
   };
 
   const deleteSession = async () => {
-    if (!selectedSession || !window.confirm(`Tem a certeza que deseja apagar a sessão ${selectedSession}?`)) return;
+    if (!selectedSession) return;
+    
+    const code = window.prompt(`Para apagar a sessão ${selectedSession}, por favor insira o código de autorização:`);
+    if (code === null) return; // User cancelled
+    
+    if (!code.trim()) {
+      alert("Código não pode estar vazio.");
+      return;
+    }
     
     try {
-      const res = await fetch(`http://localhost:8000/sessions/${selectedSession}`, { method: 'DELETE' });
+      const res = await fetch(`http://localhost:8000/sessions/${selectedSession}/delete`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_code: code.trim() })
+      });
+      
       if (res.ok) {
         setSelectedSession('');
         setHistoryData([]);
         setSummary({ total: 0, success: 0, error: 0 });
         fetchSessions();
+        alert('Sessão e ficheiros associados apagados com sucesso!');
+      } else if (res.status === 401) {
+        alert('Erro: Código de autorização inválido.');
       } else {
-        alert('Erro ao apagar sessão');
+        alert('Erro ao apagar sessão.');
       }
     } catch (err) {
       console.error(err);
+      alert('Erro de comunicação ao apagar sessão.');
     }
   };
 
@@ -157,7 +174,8 @@ export default function History() {
                     <th style={{ padding: '12px' }}>ID Code</th>
                     <th style={{ padding: '12px' }}>Nome</th>
                     <th style={{ padding: '12px' }}>Telefone</th>
-                    <th style={{ padding: '12px' }}>Estado</th>
+                    <th style={{ padding: '12px' }}>Normal</th>
+                    <th style={{ padding: '12px' }}>Levantamento</th>
                     <th style={{ padding: '12px' }}>Erro</th>
                   </tr>
                 </thead>
@@ -172,13 +190,27 @@ export default function History() {
                         <span style={{ 
                           padding: '4px 8px', 
                           borderRadius: '4px', 
-                          background: item.status === 'Pendente' ? 'rgba(255,255,255,0.1)' : item.status.includes('Erro') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                          color: item.status === 'Pendente' ? 'var(--text-main)' : item.status.includes('Erro') ? 'var(--danger)' : 'var(--success)'
+                          background: item.status === 'Pendente' ? 'rgba(255,255,255,0.1)' : (item.status && item.status.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                          color: item.status === 'Pendente' ? 'var(--text-main)' : (item.status && item.status.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
                         }}>
-                          {item.status}
+                          {item.status || 'Pendente'}
                         </span>
                       </td>
-                      <td style={{ padding: '12px', color: 'var(--danger)', fontSize: '12px' }}>{item.error}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          borderRadius: '4px', 
+                          background: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'rgba(255,255,255,0.1)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                          color: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--text-main)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
+                        }}>
+                          {item.status_levantamento || 'Pendente'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', color: 'var(--danger)', fontSize: '12px' }}>
+                        {item.error ? `Normal: ${item.error}` : ''}
+                        {item.error && item.error_levantamento ? ' | ' : ''}
+                        {item.error_levantamento ? `Levantamento: ${item.error_levantamento}` : ''}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
