@@ -1,4 +1,5 @@
 import requests
+import cloudscraper
 import os
 from .logger import get_logger
 
@@ -6,7 +7,10 @@ logger = get_logger("WhatsAppAPI")
 
 def upload_whatchimp_media(api_token, phone_number_id, image_path):
     url = "https://app.whatchimp.com/api/v1/whatsapp/upload/media"
-    headers = {"Authorization": f"Bearer {api_token}"}
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
     payload = {'phone_number_id': phone_number_id}
     
     logger.info(f"Uploading media: {image_path}")
@@ -14,8 +18,14 @@ def upload_whatchimp_media(api_token, phone_number_id, image_path):
     try:
         with open(image_path, 'rb') as f:
             files = [('media_file', (os.path.basename(image_path), f, 'image/png'))]
-            response = requests.post(url, headers=headers, data=payload, files=files, timeout=30)
-            result = response.json()
+            scraper = cloudscraper.create_scraper()
+            response = scraper.post(url, headers=headers, data=payload, files=files, timeout=30)
+            try:
+                result = response.json()
+            except Exception as json_err:
+                logger.error(f"Upload falhou. Code: {response.status_code}, Body: {response.text}")
+                return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+                
             if str(result.get("status")) != "1":
                 logger.error(f"Upload falhou: {result}")
             return result
@@ -94,12 +104,22 @@ def send_whatchimp_template(api_token, phone_number_id, phone_number, template_i
     
     logger.info(f"Sending template {template_id} to {phone_str}")
     
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
     try:
-        response = requests.post(url, data=payload, timeout=30)
-        result = response.json()
+        scraper = cloudscraper.create_scraper()
+        response = scraper.post(url, headers=headers, data=payload, timeout=30)
+        try:
+            result = response.json()
+        except Exception as json_err:
+            logger.error(f"Template falhou. Code: {response.status_code}, Body: {response.text}")
+            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+            
         if str(result.get("status")) != "1":
-            logger.error(f"Envio de template falhou: {result}")
+            logger.error(f"Template falhou: {result}")
         return result
     except Exception as e:
-        logger.error(f"Erro de exceção no envio de template: {e}")
+        logger.error(f"Erro de exceção no template: {e}")
         return {"status": "0", "message": str(e)}

@@ -11,6 +11,9 @@ import requests
 import shutil
 import sqlite3
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from api.services import process_excel_bg
 from core.database import get_all_sessions, load_session, get_setting, save_setting, init_db, delete_session, save_session
