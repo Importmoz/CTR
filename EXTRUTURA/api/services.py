@@ -5,6 +5,7 @@ import io
 import os
 import shutil
 import asyncio
+import requests
 from PIL import Image, ImageChops
 from html2image import Html2Image
 from datetime import datetime
@@ -354,17 +355,38 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                 
                 ctr_folder_id = create_folder(gdrive_service, id_ctr, parent_id)
                 pag_folder_id = create_folder(gdrive_service, "PAGAMENTOS", ctr_folder_id)
+                if pag_folder_id:
+                    save_setting(f"gdrive_folder_id_{id_ctr}", pag_folder_id)
                 
+                sheet_id = None
                 # Sobe a Lista como GSheet
                 lista_excel_path = os.path.join(pagamentos_root, f"Lista_{id_ctr}.xlsx")
                 if os.path.exists(lista_excel_path):
                     sheet_id = upload_file(gdrive_service, lista_excel_path, f"Lista_{id_ctr}", pag_folder_id, convert_to_gsheet=True)
+                    if sheet_id:
+                        save_setting(f"gdrive_sheet_id_{id_ctr}", sheet_id)
                     gsheet_path = os.path.join(pagamentos_root, f"Lista_{id_ctr}.gsheet")
                     create_local_gsheet_shortcut(sheet_id, gsheet_path, gdrive_email)
                     os.remove(lista_excel_path)
                     
                 # Sobe as restantes sub-pastas (imagens e mds)
                 upload_folder_recursive(gdrive_service, pagamentos_root, pag_folder_id)
+                
+                # Grava no PocketBase na tabela confirm_projects
+                try:
+                    pb_url = "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io/api/collections/confirm_projects/records"
+                    pb_payload = {
+                        "name": id_ctr,
+                        "sheetId": sheet_id or "",
+                        "folderId": pag_folder_id or ""
+                    }
+                    pb_res = requests.post(pb_url, json=pb_payload, timeout=15)
+                    if pb_res.status_code in [200, 201]:
+                        get_logger("BackgroundProcessor").info(f"Registo em confirm_projects criado com sucesso no PocketBase para {id_ctr}")
+                    else:
+                        get_logger("BackgroundProcessor").warning(f"Falha ao criar registo no PocketBase (status {pb_res.status_code}): {pb_res.text}")
+                except Exception as pb_err:
+                    get_logger("BackgroundProcessor").error(f"Erro ao ligar ao PocketBase: {pb_err}")
                 
             except Exception as e:
                 get_logger("BackgroundProcessor").error(f"Erro no GDrive upload: {e}")
@@ -378,7 +400,9 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
             from api.main import start_sending
             asyncio.create_task(start_sending(id_ctr=id_ctr, send_mode="normal"))
 
-        await progress_callback(100, 100, "Concluído!")
+        sheet_id_res = get_setting(f"gdrive_sheet_id_{id_ctr}", "")
+        folder_id_res = get_setting(f"gdrive_folder_id_{id_ctr}", "")
+        await progress_callback(100, 100, "Concluído!", extra={"sheetId": sheet_id_res, "folderId": folder_id_res})
         
     except Exception as e:
         save_setting(f"proc_status_{id_ctr}", f"error: {e}")

@@ -23,13 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar o restante do código da aplicação
 COPY . .
 
-# Expor o porto que o Streamlit usa (por defeito 8501)
-EXPOSE 8501
+# Expor a porta do servidor FastAPI
+EXPOSE 8000
 
-# Variável de ambiente indicando ao Streamlit como rodar sem interface e numa cloud
+# Variáveis de ambiente
 ENV PYTHONUNBUFFERED=1
-ENV STREAMLIT_SERVER_PORT=8501
-ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-# Comando para iniciar a aplicação (com flags explícitas para evitar falhas de rede no Docker)
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Comando para iniciar o servidor Backend (FastAPI via Uvicorn)
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

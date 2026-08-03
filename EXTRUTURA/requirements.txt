@@ -1,4 +1,3 @@
-streamlit
 pandas
 openpyxl>=3.1.5
 html2image
@@ -6,10 +5,11 @@ requests
 python-dotenv
 Pillow
 numpy
-streamlit-autorefresh
 fastapi
 uvicorn
 websockets
 python-multipart
 google-api-python-client
 google-auth
+google-auth-oauthlib
+requests-oauthlib

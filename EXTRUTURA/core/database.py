@@ -143,3 +143,78 @@ def get_setting(key, default=None):
     except Exception as e:
         logger.error(f"Error getting setting {key}: {e}")
         return default
+
+def get_general_metrics():
+    """Computes aggregate reporting statistics across all processed sessions"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_ctr, updated_at, queue_data_json FROM sessions ORDER BY updated_at DESC")
+        rows = cursor.fetchall()
+        
+        cursor.execute("SELECT COUNT(*) FROM settings WHERE key LIKE 'gdrive_folder_id_%' AND value != ''")
+        gdrive_row = cursor.fetchone()
+        gdrive_count = gdrive_row[0] if gdrive_row else 0
+        
+        conn.close()
+        
+        total_projects = len(rows)
+        total_messages = 0
+        total_success = 0
+        total_errors = 0
+        unique_clients = set()
+        recent_projects = []
+        
+        for idx, (id_ctr, updated_at, queue_json) in enumerate(rows):
+            try:
+                queue = json.loads(queue_json) if queue_json else []
+            except Exception:
+                queue = []
+                
+            proj_total = len(queue)
+            proj_success = 0
+            proj_error = 0
+            
+            for item in queue:
+                total_messages += 1
+                status = str(item.get("status", "")).lower()
+                if "sucesso" in status or "ignorado" in status or "success" in status or "sent" in status:
+                    total_success += 1
+                    proj_success += 1
+                elif "falha" in status or "erro" in status or "sem contacto" in status or "error" in status or "failed" in status:
+                    total_errors += 1
+                    proj_error += 1
+                
+                client_id = item.get("id_code") or item.get("codigo")
+                if client_id:
+                    unique_clients.add(str(client_id).strip())
+            
+            if idx < 100:
+                recent_projects.append({
+                    "id_ctr": id_ctr,
+                    "updated_at": str(updated_at)[:16].replace("T", " "),
+                    "total": proj_total,
+                    "success": proj_success,
+                    "error": proj_error
+                })
+                
+        success_rate = round((total_success / total_messages * 100), 1) if total_messages > 0 else 0.0
+        
+        return {
+            "total_projects": total_projects,
+            "total_messages": total_messages,
+            "total_success": total_success,
+            "total_errors": total_errors,
+            "total_pending": max(0, total_messages - total_success - total_errors),
+            "success_rate": success_rate,
+            "unique_clients": len(unique_clients),
+            "gdrive_synced": gdrive_count,
+            "recent_projects": recent_projects
+        }
+    except Exception as e:
+        logger.error(f"Error computing general metrics: {e}")
+        return {
+            "total_projects": 0, "total_messages": 0, "total_success": 0,
+            "total_errors": 0, "total_pending": 0, "success_rate": 0.0,
+            "unique_clients": 0, "gdrive_synced": 0, "recent_projects": []
+        }

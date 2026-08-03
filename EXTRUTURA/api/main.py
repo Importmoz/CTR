@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from api.services import process_excel_bg
-from core.database import get_all_sessions, load_session, get_setting, save_setting, init_db, delete_session, save_session
+from core.database import get_all_sessions, load_session, get_setting, save_setting, init_db, delete_session, save_session, get_general_metrics
 from core.whatsapp import send_whatchimp_template, upload_whatchimp_media, extract_phone_numbers
 
 app = FastAPI(title="Processador CTR API")
@@ -41,13 +41,16 @@ class ConnectionManager:
         if ws_id in self.active_connections:
             del self.active_connections[ws_id]
 
-    async def send_progress(self, ws_id: str, progress: int, message: str):
+    async def send_progress(self, ws_id: str, progress: int, message: str, extra: dict = None):
         if ws_id in self.active_connections:
             try:
-                await self.active_connections[ws_id].send_json({
+                payload = {
                     "progress": progress,
                     "message": message
-                })
+                }
+                if extra:
+                    payload.update(extra)
+                await self.active_connections[ws_id].send_json(payload)
             except:
                 self.disconnect(ws_id)
 
@@ -68,6 +71,8 @@ async def login(username: str = Form(...), password: str = Form(...)):
             return {"success": True, "token": data.get('token'), "user": data.get('record')}
         else:
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -114,8 +119,8 @@ async def upload_file(
         ed = datetime.strptime(expected_date, "%Y-%m-%d")
         pd_date = datetime.strptime(payment_deadline, "%Y-%m-%d") if payment_deadline else None
         
-        async def progress_callback(progress, total, message):
-            await manager.send_progress(id_ctr, progress, message)
+        async def progress_callback(progress, total, message, extra=None):
+            await manager.send_progress(id_ctr, progress, message, extra=extra)
 
         asyncio.create_task(process_excel_bg(
             df, id_ctr, origin_sel, dest_sel, ld, ed, pd_date, 
@@ -140,11 +145,18 @@ async def get_sessions():
     sessions = get_all_sessions()
     return {"sessions": sessions}
 
+@app.get("/metrics/summary")
+async def get_metrics_summary():
+    metrics = get_general_metrics()
+    return {"success": True, "metrics": metrics}
+
 @app.get("/sessions/{id_ctr}")
 async def get_session(id_ctr: str):
     queue = load_session(id_ctr)
     if queue:
-        return {"success": True, "queue": queue}
+        sheet_id = get_setting(f"gdrive_sheet_id_{id_ctr}", "")
+        folder_id = get_setting(f"gdrive_folder_id_{id_ctr}", "")
+        return {"success": True, "queue": queue, "sheetId": sheet_id, "folderId": folder_id}
     raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
 class DeleteSessionRequest(BaseModel):
