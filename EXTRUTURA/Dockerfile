@@ -5,13 +5,16 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Instalar as dependências do sistema operativo necessárias (Chromium para o html2image)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
+    chromium-driver \
     libnss3 \
-    libgconf-2-4 \
     fontconfig \
+    fonts-liberation \
     libxrender1 \
     libxext6 \
+    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar os ficheiros de dependências
