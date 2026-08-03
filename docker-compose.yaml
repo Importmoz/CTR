@@ -5,14 +5,13 @@ services:
     build:
       context: ./EXTRUTURA
       dockerfile: Dockerfile
-    container_name: extrutura-backend
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       - PYTHONUNBUFFERED=1
-      # As variáveis de ambiente do Coolify ou de segredos podem ser injetadas diretamente na UI
+      # As variáveis de ambiente do Coolify são injetadas diretamente na UI do painel
     volumes:
-      # Persistir ficheiros da base de dados local, logs e credenciais Google OAuth entre reinícios
+      # Persistir ficheiros da base de dados local, logs e credenciais entre reinícios e atualizações
       - app-data:/app/db
       - app-logs:/app/logs
     restart: unless-stopped
@@ -22,12 +21,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # As variáveis são recebidas do painel do Coolify durante o build da imagem Docker do React
+        # As variáveis de compilação do React são recebidas das Environment Variables do Coolify
         - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
         - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8000}
-    container_name: extrutura-frontend
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - backend
     restart: unless-stopped
