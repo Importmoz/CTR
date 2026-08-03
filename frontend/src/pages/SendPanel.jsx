@@ -3,6 +3,7 @@ import { Play, Calendar, Clock, DollarSign, Send, ChevronDown } from 'lucide-rea
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { setHours, setMinutes } from 'date-fns';
+import { API_BASE } from '../config/api';
 
 export default function SendPanel() {
   const [sessions, setSessions] = useState([]);
@@ -71,7 +72,7 @@ export default function SendPanel() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('http://localhost:8000/sessions');
+      const res = await fetch(`${API_BASE}/sessions`);
       const data = await res.json();
       setSessions(data.sessions || []);
     } catch (err) {
@@ -83,7 +84,7 @@ export default function SendPanel() {
     if (!silent) setLoading(true);
     setSelectedSession(id_ctr);
     try {
-      const res = await fetch(`http://localhost:8000/sessions/${id_ctr}`);
+      const res = await fetch(`${API_BASE}/sessions/${id_ctr}`);
       const data = await res.json();
       if (data.success) {
         setQueue(data.queue);
@@ -127,7 +128,7 @@ export default function SendPanel() {
       formData.append('valor_taxa_disp', levantamentoData.valor_taxa_disp);
     }
     try {
-      const res = await fetch('http://localhost:8000/send', { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE}/send`, { method: 'POST', body: formData });
       if (res.ok) {
         alert("Envio iniciado em background! Pode navegar ou recarregar a página para ver o progresso.");
       } else {

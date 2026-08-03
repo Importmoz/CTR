@@ -58,8 +58,8 @@ manager = ConnectionManager()
 
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
-    pb_url = "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io"
-    auth_endpoint = f"{pb_url}/api/collections/users/auth-with-password"
+    pb_base_url = os.getenv("POCKETBASE_URL", "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io").rstrip("/")
+    auth_endpoint = f"{pb_base_url}/api/collections/users/auth-with-password"
     try:
         response = requests.post(auth_endpoint, json={
             "identity": username,

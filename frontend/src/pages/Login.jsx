@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export default function Login({ setAuth }) {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export default function Login({ setAuth }) {
       formData.append('username', email);
       formData.append('password', password);
 
-      const res = await fetch('http://localhost:8000/login', {
+      const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         body: formData,
       });

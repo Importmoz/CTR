@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -24,7 +25,7 @@ export default function Settings() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://localhost:8000/settings');
+      const res = await fetch(`${API_BASE}/settings`);
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
@@ -37,7 +38,7 @@ export default function Settings() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/settings', {
+      const res = await fetch(`${API_BASE}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings })
@@ -59,7 +60,7 @@ export default function Settings() {
     }
 
     try {
-      const res = await fetch('http://localhost:8000/reset', {
+      const res = await fetch(`${API_BASE}/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ auth_code: resetCode, confirm: confirmReset })
@@ -222,7 +223,7 @@ export default function Settings() {
                   className="btn btn-outline" 
                   style={{ fontSize: '12px', padding: '6px 12px' }}
                   onClick={async () => {
-                    const res = await fetch('http://localhost:8000/google/auth-url');
+                    const res = await fetch(`${API_BASE}/google/auth-url`);
                     const data = await res.json();
                     if (data.success) {
                       if (data.code_verifier) {
@@ -244,7 +245,7 @@ export default function Settings() {
                   className="btn btn-primary" 
                   style={{ alignSelf: 'flex-start' }}
                   onClick={async () => {
-                    const res = await fetch('http://localhost:8000/google/auth-url');
+                    const res = await fetch(`${API_BASE}/google/auth-url`);
                     const data = await res.json();
                     if (data.success) {
                       if (data.code_verifier) {

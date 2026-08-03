@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { UploadCloud, CheckCircle2, AlertCircle, DownloadCloud, Calendar, ChevronDown, MapPin, Navigation, ExternalLink, Copy, FileText, Folder, Check, Trash2, Database, History as HistoryIcon, List } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { API_BASE, WS_BASE } from '../config/api';
 
 export default function Dashboard() {
   const [file, setFile] = useState(null);
@@ -39,7 +40,7 @@ export default function Dashboard() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('http://localhost:8000/sessions');
+      const res = await fetch(`${API_BASE}/sessions`);
       if (res.ok) {
         const data = await res.json();
         setSessions(data.sessions || []);
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
     setLoadingHistory(true);
     try {
-      const res = await fetch(`http://localhost:8000/sessions/${id_ctr}`);
+      const res = await fetch(`${API_BASE}/sessions/${id_ctr}`);
       if (res.ok) {
         const data = await res.json();
         const queue = data.queue || [];
@@ -96,7 +97,7 @@ export default function Dashboard() {
     }
     
     try {
-      const res = await fetch(`http://localhost:8000/sessions/${selectedSession}/delete`, { 
+      const res = await fetch(`${API_BASE}/sessions/${selectedSession}/delete`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ auth_code: code.trim() })
@@ -138,7 +139,7 @@ export default function Dashboard() {
 
   const startProcessing = async (data) => {
     try {
-      const res = await fetch('http://localhost:8000/upload', {
+      const res = await fetch(`${API_BASE}/upload`, {
         method: 'POST',
         body: data,
       });
@@ -182,7 +183,7 @@ export default function Dashboard() {
       data.append(key, typeof val === 'string' ? val.trim() : val);
     });
 
-    const wsUrl = `ws://localhost:8000/ws/progress/${encodeURIComponent(formData.id_ctr.trim())}`;
+    const wsUrl = `${WS_BASE}/ws/progress/${encodeURIComponent(formData.id_ctr.trim())}`;
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
@@ -215,7 +216,7 @@ export default function Dashboard() {
   };
 
   const downloadZip = () => {
-    window.location.href = `http://localhost:8000/download/zip/${formData.id_ctr}`;
+    window.location.href = `${API_BASE}/download/zip/${formData.id_ctr}`;
   };
 
   return (
@@ -801,7 +802,7 @@ export default function Dashboard() {
             <div className="flex-row gap-4" style={{ flexWrap: 'wrap' }}>
               <button 
                 type="button"
-                onClick={() => window.location.href = `http://localhost:8000/download/csv/${selectedSession}`}
+                onClick={() => window.location.href = `${API_BASE}/download/csv/${selectedSession}`}
                 className="btn btn-primary" 
                 style={{ flex: 1, minWidth: '200px', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' }}
               >
@@ -809,7 +810,7 @@ export default function Dashboard() {
               </button>
               <button 
                 type="button"
-                onClick={() => window.location.href = `http://localhost:8000/download/zip/${selectedSession}`}
+                onClick={() => window.location.href = `${API_BASE}/download/zip/${selectedSession}`}
                 className="btn" 
                 style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.1)', color: 'white', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' }}
               >

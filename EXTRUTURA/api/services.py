@@ -9,6 +9,9 @@ import requests
 from PIL import Image, ImageChops
 from html2image import Html2Image
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from core.whatsapp import upload_whatchimp_media, send_whatchimp_template
 from core.data_processor import process_and_clean_data, export_with_formatting, get_bank_info
@@ -374,7 +377,8 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                 
                 # Grava no PocketBase na tabela confirm_projects
                 try:
-                    pb_url = "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io/api/collections/confirm_projects/records"
+                    pb_base_url = os.getenv("POCKETBASE_URL", "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io").rstrip("/")
+                    pb_url = f"{pb_base_url}/api/collections/confirm_projects/records"
                     pb_payload = {
                         "name": id_ctr,
                         "sheetId": sheet_id or "",
