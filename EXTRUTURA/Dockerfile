@@ -20,8 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copiar os ficheiros de dependências
 COPY requirements.txt .
 
-# Instalar os pacotes Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Instalar os pacotes Python otimizados (uso de binários para não estourar a memória RAM da nuvem)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary pandas numpy Pillow openpyxl && \
+    pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copiar o restante do código da aplicação
 COPY . .
