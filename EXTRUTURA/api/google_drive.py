@@ -103,11 +103,21 @@ def upload_file(service, file_path, name, parent_id, convert_to_gsheet=False):
         'name': name,
         'parents': [parent_id]
     }
+    mime_type = "application/octet-stream"
+    if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
+        mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif file_path.endswith(".csv"):
+        mime_type = "text/csv"
+    elif file_path.endswith(".pdf"):
+        mime_type = "application/pdf"
+    elif file_path.endswith(".png"):
+        mime_type = "image/png"
+
     if convert_to_gsheet:
         file_metadata['mimeType'] = 'application/vnd.google-apps.spreadsheet'
         
-    media = MediaFileUpload(file_path, resumable=True)
-    file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
+    file = service.files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
     return file.get('id')
 
 def create_local_gsheet_shortcut(gdrive_file_id, dest_path, creds_email):
@@ -135,16 +145,16 @@ def upload_folder_recursive(service, local_folder, parent_id):
             if item.endswith(".gsheet"):
                 continue
             
-            # Simple mimetype detection based on extension
-            mime_type = None
+            mime_type = "application/octet-stream"
             if item.endswith(".png"): mime_type = "image/png"
-            elif item.endswith(".md"): mime_type = "text/markdown"
+            elif item.endswith(".md") or item.endswith(".txt") or item.endswith(".log"): mime_type = "text/plain"
             elif item.endswith(".pdf"): mime_type = "application/pdf"
+            elif item.endswith(".xlsx"): mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             
             file_metadata = {'name': item, 'parents': [parent_id]}
             media = MediaFileUpload(item_path, mimetype=mime_type, resumable=True)
             try:
-                service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+                service.files().create(body=file_metadata, media_body=media, fields='id', supportsAllDrives=True).execute()
             except Exception as e:
                 logger.error(f"Erro ao subir ficheiro {item}: {e}")
 

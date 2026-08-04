@@ -19,7 +19,7 @@ from core.media_generator import generate_html_table, get_message_template
 from core.database import save_session, save_setting, get_setting
 from core.logger import get_logger
 
-hti = Html2Image(custom_flags=['--no-sandbox', '--disable-setuid-sandbox', '--headless', '--disable-gpu'])
+hti = Html2Image(custom_flags=['--no-sandbox', '--disable-setuid-sandbox', '--headless', '--disable-gpu', '--disable-dbus', '--disable-dev-shm-usage', '--log-level=3', '--silent'])
 
 async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback, send_whatsapp=False):
     try:
