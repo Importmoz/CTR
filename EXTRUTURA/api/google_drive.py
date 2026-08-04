@@ -22,6 +22,40 @@ def get_client_secrets_file():
     
     if os.path.exists(file1): return file1
     if os.path.exists(file2): return file2
+    
+    # Suporte para criação automática via variáveis de ambiente (padrão em servidores Cloud/Coolify)
+    env_json_str = os.getenv("GOOGLE_OAUTH_JSON")
+    if env_json_str and env_json_str.strip().startswith("{"):
+        try:
+            data = json.loads(env_json_str)
+            with open(file1, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            return file1
+        except Exception as e:
+            logger.error(f"Erro ao parsear GOOGLE_OAUTH_JSON: {e}")
+            
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    if client_id and client_secret:
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://m447cyfq0dvffd1xwstwi1ca.144.91.110.199.sslip.io/api/google/auth/callback")
+        oauth_data = {
+            "web": {
+                "client_id": client_id,
+                "project_id": os.getenv("GOOGLE_PROJECT_ID", "modulos-494121"),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_secret": client_secret,
+                "redirect_uris": [redirect_uri, "http://localhost:5173/api/google/auth/callback"]
+            }
+        }
+        try:
+            with open(file1, "w", encoding="utf-8") as f:
+                json.dump(oauth_data, f, indent=2)
+            return file1
+        except Exception as e:
+            logger.error(f"Erro ao salvar arquivo oauth do Google: {e}")
+            
     return None
 
 def get_google_flow(redirect_uri=None):

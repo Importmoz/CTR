@@ -231,7 +231,7 @@ def google_auth_url():
         from api.google_drive import get_google_flow
         flow = get_google_flow()
         if not flow:
-            return {"success": False, "message": "Ficheiro google-oauth.json não encontrado na raiz."}
+            return {"success": False, "message": "Credenciais do Google não encontradas! Configura as variáveis GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas Variáveis de Ambiente do Backend no Coolify."}
         
         auth_url, _ = flow.authorization_url(
             access_type='offline',
