@@ -24,7 +24,9 @@ def get_client_secrets_file():
     if os.path.exists(file2): return file2
     return None
 
-def get_google_flow(redirect_uri="http://localhost:5173/api/google/auth/callback"):
+def get_google_flow(redirect_uri=None):
+    if redirect_uri is None:
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://m447cyfq0dvffd1xwstwi1ca.144.91.110.199.sslip.io/api/google/auth/callback")
     client_secrets_file = get_client_secrets_file()
     if not client_secrets_file:
         return None
