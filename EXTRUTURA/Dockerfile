@@ -22,7 +22,7 @@ COPY requirements.txt .
 
 # Instalar os pacotes Python otimizados (uso de binários para não estourar a memória RAM da nuvem)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --prefer-binary pandas numpy Pillow openpyxl && \
+    pip install --no-cache-dir --prefer-binary pandas numpy Pillow openpyxl xlsxwriter xlrd && \
     pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copiar o restante do código da aplicação

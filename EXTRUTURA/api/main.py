@@ -274,9 +274,14 @@ def google_callback(req: GoogleCallbackRequest):
         save_setting('google_oauth_token', json.dumps(token_data))
         return {"success": True}
     except Exception as e:
+        err_str = str(e)
+        if "invalid_grant" in err_str or "Bad Request" in err_str:
+            existing_token = get_setting('google_oauth_token', '')
+            if existing_token and len(existing_token) > 10:
+                return {"success": True, "message": "Token já processado em chamada anterior."}
         import traceback
         traceback.print_exc()
-        return {"success": False, "message": str(e)}
+        return {"success": False, "message": err_str}
 
 @app.post("/settings")
 async def update_settings(data: SettingsUpdate):
