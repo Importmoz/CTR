@@ -4,6 +4,14 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { API_BASE, WS_BASE } from '../config/api';
 
+const formatLocalDate = (date) => {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function Dashboard() {
   const [file, setFile] = useState(null);
   const [formData, setFormData] = useState({
@@ -429,7 +437,7 @@ export default function Dashboard() {
                   <DatePicker 
                     className="transparent-input" 
                     selected={formData.loading_date ? new Date(formData.loading_date + 'T12:00:00') : null} 
-                    onChange={date => setFormData({...formData, loading_date: date ? date.toISOString().split('T')[0] : ''})} 
+                    onChange={date => setFormData({...formData, loading_date: formatLocalDate(date)})} 
                     dateFormat="dd/MM/yyyy"
                     required 
                   />
@@ -442,7 +450,7 @@ export default function Dashboard() {
                   <DatePicker 
                     className="transparent-input" 
                     selected={formData.expected_date ? new Date(formData.expected_date + 'T12:00:00') : null} 
-                    onChange={date => setFormData({...formData, expected_date: date ? date.toISOString().split('T')[0] : ''})} 
+                    onChange={date => setFormData({...formData, expected_date: formatLocalDate(date)})} 
                     dateFormat="dd/MM/yyyy"
                     required 
                   />
@@ -455,7 +463,7 @@ export default function Dashboard() {
                   <DatePicker 
                     className="transparent-input" 
                     selected={formData.payment_deadline ? new Date(formData.payment_deadline + 'T12:00:00') : null} 
-                    onChange={date => setFormData({...formData, payment_deadline: date ? date.toISOString().split('T')[0] : ''})} 
+                    onChange={date => setFormData({...formData, payment_deadline: formatLocalDate(date)})} 
                     dateFormat="dd/MM/yyyy"
                   />
                 </div>
