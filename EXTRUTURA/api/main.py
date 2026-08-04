@@ -257,6 +257,7 @@ def google_callback(req: GoogleCallbackRequest):
         if req.code_verifier:
             flow.code_verifier = req.code_verifier
             
+        os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
         flow.fetch_token(code=req.code)
         creds = flow.credentials
         

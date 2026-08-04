@@ -8,10 +8,11 @@ from googleapiclient.http import MediaFileUpload
 from core.logger import get_logger
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
 logger = get_logger("GoogleDrive")
 
-SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
 def get_client_secrets_file():
     base_dir = os.path.dirname(os.path.dirname(__file__)) # EXTRUTURA
