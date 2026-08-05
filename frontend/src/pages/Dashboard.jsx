@@ -40,11 +40,41 @@ export default function Dashboard() {
   const [summary, setSummary] = useState({ total: 0, success: 0, error: 0 });
   const [gdriveInfo, setGdriveInfo] = useState({ sheetId: '', folderId: '' });
   const [activeView, setActiveView] = useState('upload'); // 'upload' ou 'monitor'
+  const [conversionQueue, setConversionQueue] = useState([]);
   const wsRef = useRef(null);
   const fileInputRef = useRef(null);
   useEffect(() => {
     fetchSessions();
+    fetchConversionQueue();
+    const interval = setInterval(fetchConversionQueue, 2500);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchConversionQueue = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/conversion-queue/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setConversionQueue(data.jobs || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const removeConversionJob = async (jobId) => {
+    try {
+      await fetch(`${API_BASE}/conversion-queue/remove/${jobId}`, { method: 'POST' });
+      fetchConversionQueue();
+    } catch (err) { console.error(err); }
+  };
+
+  const clearCompletedConversionJobs = async () => {
+    try {
+      await fetch(`${API_BASE}/conversion-queue/clear-completed`, { method: 'POST' });
+      fetchConversionQueue();
+    } catch (err) { console.error(err); }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -152,7 +182,15 @@ export default function Dashboard() {
         body: data,
       });
       const result = await res.json();
-      if (!res.ok) {
+      if (res.ok) {
+        setStatus('idle');
+        setFile(null);
+        setFormData(prev => ({ ...prev, id_ctr: '' }));
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        fetchConversionQueue();
+        fetchSessions();
+        alert(`✅ CTR adicionado à Fila de Conversão em background!\nPode carregar logo outro CTR se desejar.`);
+      } else {
         setStatus('error');
         setProgress({ percent: 0, message: result.detail || 'Erro no upload' });
       }
@@ -179,7 +217,7 @@ export default function Dashboard() {
     
     setStatus('uploading');
     setGdriveData({ sheetId: '', folderId: '' });
-    setProgress({ percent: 5, message: 'A enviar ficheiro para o servidor...' });
+    setProgress({ percent: 50, message: 'A enviar ficheiro para a Fila do servidor...' });
     
     const data = new FormData();
     data.append('file', file);
@@ -191,35 +229,6 @@ export default function Dashboard() {
       data.append(key, typeof val === 'string' ? val.trim() : val);
     });
 
-    const wsUrl = `${WS_BASE}/ws/progress/${encodeURIComponent(formData.id_ctr.trim())}`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      setStatus('processing');
-      setProgress({ percent: 10, message: 'A processar dados no servidor...' });
-    };
-
-    ws.onmessage = (event) => {
-      const msgData = JSON.parse(event.data);
-      setProgress({ percent: msgData.progress, message: msgData.message });
-      if (msgData.progress === 100 && msgData.message === 'Concluído!') {
-        setStatus('completed');
-        if (msgData.sheetId || msgData.folderId) {
-          setGdriveData({ sheetId: msgData.sheetId || '', folderId: msgData.folderId || '' });
-        }
-        fetchSessions();
-        ws.close();
-      } else if (msgData.message.startsWith('Erro')) {
-        setStatus('error');
-        ws.close();
-      }
-    };
-
-    ws.onerror = () => {
-      console.warn("Falha no WebSocket de progresso em tempo real.");
-    };
-
-    wsRef.current = ws;
     startProcessing(data);
   };
 
@@ -516,15 +525,91 @@ export default function Dashboard() {
               <button 
                 type="submit" 
                 className="btn btn-primary" 
-                disabled={status === 'uploading' || status === 'processing'}
-                style={{ opacity: (status === 'uploading' || status === 'processing') ? 0.6 : 1, cursor: 'pointer' }}
+                disabled={status === 'uploading'}
+                style={{ opacity: status === 'uploading' ? 0.6 : 1, cursor: 'pointer' }}
               >
-                {status === 'idle' ? 'Iniciar Processamento' : status === 'uploading' ? 'A enviar ficheiro...' : status === 'processing' ? 'A processar em background...' : 'Iniciar Novo Processamento'}
+                {status === 'uploading' ? 'A carregar na Fila...' : '+ Adicionar CTR à Fila e Processar'}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* NOVO PAINEL DAS FILAS DE CONVERSÃO */}
+      {activeView === 'upload' && conversionQueue.length > 0 && (
+        <div className="glass-panel animate-fade-in" style={{ marginTop: '28px' }}>
+          <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <List size={22} color="var(--primary)" />
+              <h3 style={{ margin: 0, fontSize: '18px' }}>Fila de Conversão de Múltiplos CTRs ({conversionQueue.length})</h3>
+            </div>
+            {conversionQueue.some(j => j.status === 'completed' || j.status === 'error') && (
+              <button 
+                type="button" 
+                onClick={clearCompletedConversionJobs}
+                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#F87171', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Limpar Concluídos da Fila
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {conversionQueue.map((job) => (
+              <div key={job.job_id} style={{
+                background: 'rgba(15, 23, 42, 0.75)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.15)', padding: '4px 12px', borderRadius: '8px' }}>
+                      CTR {job.id_ctr}
+                    </span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                      Destino: {job.params?.dest_sel || 'MAPUTO'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {job.status === 'queued' && (
+                      <>
+                        <span style={{ color: '#FBBF24', fontSize: '14px', fontWeight: '500' }}>⏳ Aguardando na fila...</span>
+                        <button type="button" onClick={() => removeConversionJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer' }} title="Remover da Fila"><Trash2 size={18} /></button>
+                      </>
+                    )}
+                    {job.status === 'processing' && (
+                      <span style={{ color: 'var(--primary)', fontSize: '14px', fontWeight: '600' }}>🔄 Em Processamento ({job.progress}%)</span>
+                    )}
+                    {job.status === 'completed' && (
+                      <span style={{ color: '#10B981', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={18} /> Concluído!</span>
+                    )}
+                    {job.status === 'error' && (
+                      <span style={{ color: '#F87171', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertCircle size={18} /> Falhou</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="progress-container" style={{ height: '8px' }}>
+                  <div className="progress-bar" style={{
+                    width: `${job.progress || 0}%`,
+                    background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--primary)'
+                  }}></div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <span>{job.message}</span>
+                  {job.status === 'completed' && (
+                    <span style={{ color: '#10B981' }}>Relatório pronto no Google Drive e Banco de Dados!</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {status !== 'idle' && (
         <div className="glass-panel animate-fade-in" style={{ marginTop: '24px' }}>

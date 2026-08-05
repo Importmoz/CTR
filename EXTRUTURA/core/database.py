@@ -37,6 +37,34 @@ def init_db():
             )
         """)
         
+        # Tabela para Fila de Conversão de Múltiplos CTRs
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conversion_jobs (
+                job_id TEXT PRIMARY KEY,
+                id_ctr TEXT,
+                status TEXT,
+                progress INTEGER,
+                message TEXT,
+                file_path TEXT,
+                params_json TEXT,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+        """)
+
+        # Tabela para Fila de Envia de WhatsApp para Múltiplos CTRs
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sending_jobs (
+                job_id TEXT PRIMARY KEY,
+                id_ctr TEXT,
+                status TEXT,
+                send_mode TEXT,
+                params_json TEXT,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+        """)
+
         conn.commit()
         conn.close()
         logger.info("Database initialized successfully.")
@@ -218,3 +246,138 @@ def get_general_metrics():
             "total_errors": 0, "total_pending": 0, "success_rate": 0.0,
             "unique_clients": 0, "gdrive_synced": 0, "recent_projects": []
         }
+
+# --- FUNÇÕES DE CONTROLE DAS FILAS PERSISTENTES (CONVERSÃO & ENVIO) ---
+
+def save_conversion_job(job_id, id_ctr, status, progress, message, file_path, params_dict):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        now = datetime.now()
+        params_json = json.dumps(params_dict, ensure_ascii=False)
+        cursor.execute("""
+            INSERT OR REPLACE INTO conversion_jobs (job_id, id_ctr, status, progress, message, file_path, params_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (job_id, id_ctr, status, progress, message, file_path, params_json, now, now))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error saving conversion job {job_id}: {e}")
+
+def update_conversion_job_status(job_id, status, progress=None, message=None):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        now = datetime.now()
+        fields = ["status = ?", "updated_at = ?"]
+        values = [status, now]
+        if progress is not None:
+            fields.append("progress = ?")
+            values.append(progress)
+        if message is not None:
+            fields.append("message = ?")
+            values.append(message)
+        values.append(job_id)
+        cursor.execute(f"UPDATE conversion_jobs SET {', '.join(fields)} WHERE job_id = ?", tuple(values))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error updating conversion job {job_id}: {e}")
+
+def get_all_conversion_jobs(status=None):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        if status:
+            cursor.execute("SELECT job_id, id_ctr, status, progress, message, file_path, params_json, created_at FROM conversion_jobs WHERE status = ? ORDER BY created_at ASC", (status,))
+        else:
+            cursor.execute("SELECT job_id, id_ctr, status, progress, message, file_path, params_json, created_at FROM conversion_jobs ORDER BY created_at ASC")
+        rows = cursor.fetchall()
+        conn.close()
+        jobs = []
+        for r in rows:
+            jobs.append({
+                "job_id": r[0],
+                "id_ctr": r[1],
+                "status": r[2],
+                "progress": r[3],
+                "message": r[4],
+                "file_path": r[5],
+                "params": json.loads(r[6]) if r[6] else {},
+                "created_at": str(r[7])
+            })
+        return jobs
+    except Exception as e:
+        logger.error(f"Error fetching conversion jobs: {e}")
+        return []
+
+def delete_conversion_job(job_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM conversion_jobs WHERE job_id = ?", (job_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error deleting conversion job {job_id}: {e}")
+
+def save_sending_job(job_id, id_ctr, status, send_mode, params_dict):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        now = datetime.now()
+        params_json = json.dumps(params_dict, ensure_ascii=False)
+        cursor.execute("""
+            INSERT OR REPLACE INTO sending_jobs (job_id, id_ctr, status, send_mode, params_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (job_id, id_ctr, status, send_mode, params_json, now, now))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error saving sending job {job_id}: {e}")
+
+def update_sending_job_status(job_id, status):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        now = datetime.now()
+        cursor.execute("UPDATE sending_jobs SET status = ?, updated_at = ? WHERE job_id = ?", (status, now, job_id))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error updating sending job {job_id}: {e}")
+
+def get_all_sending_jobs(status=None):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        if status:
+            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at FROM sending_jobs WHERE status = ? ORDER BY created_at ASC", (status,))
+        else:
+            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at FROM sending_jobs ORDER BY created_at ASC")
+        rows = cursor.fetchall()
+        conn.close()
+        jobs = []
+        for r in rows:
+            jobs.append({
+                "job_id": r[0],
+                "id_ctr": r[1],
+                "status": r[2],
+                "send_mode": r[3],
+                "params": json.loads(r[4]) if r[4] else {},
+                "created_at": str(r[5])
+            })
+        return jobs
+    except Exception as e:
+        logger.error(f"Error fetching sending jobs: {e}")
+        return []
+
+def delete_sending_job(job_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM sending_jobs WHERE job_id = ?", (job_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error deleting sending job {job_id}: {e}")

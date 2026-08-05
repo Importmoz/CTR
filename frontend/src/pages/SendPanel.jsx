@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Play, Calendar, Clock, DollarSign, Send, ChevronDown } from 'lucide-react';
+import { Play, Calendar, Clock, DollarSign, Send, ChevronDown, List, Trash2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { setHours, setMinutes } from 'date-fns';
@@ -12,6 +12,7 @@ export default function SendPanel() {
   const [loading, setLoading] = useState(false);
   const [sendMode, setSendMode] = useState('normal');
   const [isModeOpen, setIsModeOpen] = useState(false);
+  const [sendingJobs, setSendingJobs] = useState([]);
 
   const [levantamentoData, setLevantamentoData] = useState({
     data_disp: new Date(),
@@ -21,6 +22,40 @@ export default function SendPanel() {
   });
 
   const [isSending, setIsSending] = useState(false);
+  const [retryingIndex, setRetryingIndex] = useState(null);
+
+  useEffect(() => {
+    fetchSessions();
+    fetchSendingQueue();
+    const interval = setInterval(fetchSendingQueue, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchSendingQueue = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/send-queue/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setSendingJobs(data.jobs || []);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar fila de envios:", err);
+    }
+  };
+
+  const removeSendingJob = async (jobId) => {
+    try {
+      await fetch(`${API_BASE}/send-queue/remove/${jobId}`, { method: 'POST' });
+      fetchSendingQueue();
+    } catch (err) { console.error(err); }
+  };
+
+  const clearCompletedSendJobs = async () => {
+    try {
+      await fetch(`${API_BASE}/send-queue/clear-completed`, { method: 'POST' });
+      fetchSendingQueue();
+    } catch (err) { console.error(err); }
+  };
 
   // GERA LISTA EXPLÍCITA DE HORÁRIOS PERMITIDOS
   // IMPORTANTE: Todos os Date objects para horas DEVEM usar new Date() como base.
@@ -65,10 +100,6 @@ export default function SendPanel() {
   const endTimeForPicker = useMemo(() => {
     return setHours(setMinutes(new Date(), levantamentoData.time_end?.getMinutes() ?? 0), levantamentoData.time_end?.getHours() ?? 15);
   }, [levantamentoData.time_end]);
-
-  useEffect(() => {
-    fetchSessions();
-  }, []);
 
   const fetchSessions = async () => {
     try {
@@ -128,17 +159,58 @@ export default function SendPanel() {
       formData.append('valor_taxa_disp', levantamentoData.valor_taxa_disp);
     }
     try {
-      const res = await fetch(`${API_BASE}/send`, { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE}/send-queue/add`, { method: 'POST', body: formData });
       if (res.ok) {
-        alert("Envio iniciado em background! Pode navegar ou recarregar a página para ver o progresso.");
+        alert("✅ Sessão adicionada à Fila de Envio do WhatsApp!\nO sistema processará os CTRs em ordem na fila.");
+        fetchSendingQueue();
       } else {
-        alert("Erro ao iniciar envio.");
+        alert("Erro ao adicionar envio à fila.");
       }
     } catch (err) {
       console.error(err);
       alert("Erro de comunicação com o servidor.");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleRetryItem = async (index) => {
+    if (!selectedSession) return;
+    if (sendMode === 'levantamento' && (!levantamentoData.data_disp || !levantamentoData.time_start || !levantamentoData.time_end || !levantamentoData.valor_taxa_disp)) {
+      alert("Para o modo Levantamento, preencha a Data, Horário e Valor da Taxa.");
+      return;
+    }
+    setRetryingIndex(index);
+    const formData = new FormData();
+    formData.append('id_ctr', selectedSession);
+    formData.append('index', index);
+    formData.append('send_mode', sendMode);
+    if (sendMode === 'levantamento') {
+      const formattedDate = levantamentoData.data_disp.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric' });
+      const finalDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+      const formatTime = (dateObj) => {
+        if (!dateObj || !(dateObj instanceof Date)) return '00:00';
+        return dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+      };
+      const horario_disp = `${formatTime(levantamentoData.time_start)} - ${formatTime(levantamentoData.time_end)}`;
+      formData.append('data_disp', finalDate);
+      formData.append('horario_disp', horario_disp);
+      formData.append('valor_taxa_disp', levantamentoData.valor_taxa_disp);
+    }
+    try {
+      const res = await fetch(`${API_BASE}/send/retry-item`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert("✅ Mensagem reenviada com sucesso!");
+      } else {
+        alert(`❌ Erro no reenvio: ${data.detail || data.error || 'Falha ao re-enviar'}`);
+      }
+      loadSession(selectedSession, true);
+    } catch (err) {
+      console.error(err);
+      alert("Erro de comunicação com o servidor ao reenviar.");
+    } finally {
+      setRetryingIndex(null);
     }
   };
 
@@ -226,8 +298,13 @@ export default function SendPanel() {
                       )}
                     </div>
                   </div>
-                  <button onClick={handleStartSend} disabled={isSending} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Play size={16} /> {isSending? 'A iniciar...' : 'Iniciar Envio'}
+                  {queue.some(it => (sendMode === 'levantamento' ? it.status_levantamento : it.status)?.includes('Erro')) && (
+                    <button onClick={handleStartSend} disabled={isSending} className="btn" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#F87171', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer' }} title="Adicionar de volta à fila para re-tentar o envio a todos os que falharam">
+                      <RefreshCw size={16} /> Reenviar Falhados à Fila
+                    </button>
+                  )}
+                  <button onClick={handleStartSend} disabled={isSending} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+                    <Play size={16} /> {isSending? 'A agendar...' : '+ Adicionar à Fila de Envio'}
                   </button>
                 </div>
               </div>
@@ -318,7 +395,7 @@ export default function SendPanel() {
                       <td style={{ padding: '12px' }}>{item.id_code}</td>
                       <td style={{ padding: '12px' }}>{item.name}</td>
                       <td style={{ padding: '12px' }}>{item.phone}</td>
-                      <td style={{ padding: '12px' }}>
+                      <td style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
                         <span style={{
                           padding: '4px 8px',
                           borderRadius: '4px',
@@ -328,6 +405,31 @@ export default function SendPanel() {
                           {currentStatus}
                           {currentError && <div style={{ fontSize: '10px', marginTop: '2px' }}>{currentError}</div>}
                         </span>
+                        {currentStatus.includes('Erro') && (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryItem(idx)}
+                            disabled={retryingIndex === idx || isSending}
+                            style={{
+                              background: 'rgba(59, 130, 246, 0.15)',
+                              border: '1px solid rgba(59, 130, 246, 0.4)',
+                              color: '#60A5FA',
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            title="Tentar re-enviar a mensagem apenas para esta pessoa agora"
+                          >
+                            <RefreshCw size={13} className={retryingIndex === idx ? 'spinner' : ''} />
+                            {retryingIndex === idx ? 'A tentar...' : '🔄 Tentar Novamente'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                     )})}
@@ -337,11 +439,74 @@ export default function SendPanel() {
             </div>
           ) : (
             <div className="flex-col items-center justify-center py-8">
-              <p className="text-muted">Selecione uma sessão à esquerda para ver as mensagens.</p>
+              <p className="text-muted">Selecione uma sessão à esquerda para ver as mensagens ou adicioná-las à fila de envio.</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* PAINEL DE MONITORAMENTO DA FILA DE ENVIO WHATSAPP */}
+      {sendingJobs.length > 0 && (
+        <div className="glass-panel animate-fade-in" style={{ marginTop: '28px' }}>
+          <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <List size={22} color="var(--success)" />
+              <h3 style={{ margin: 0, fontSize: '18px' }}>Fila de Disparo WhatsApp ({sendingJobs.length} em fila)</h3>
+            </div>
+            {sendingJobs.some(j => j.status === 'completed' || j.status === 'error') && (
+              <button 
+                type="button" 
+                onClick={clearCompletedSendJobs}
+                style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#F87171', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Limpar Concluídos da Fila
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {sendingJobs.map((job) => (
+              <div key={job.job_id} style={{
+                background: 'rgba(15, 23, 42, 0.75)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: '700', color: 'white', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '4px 12px', borderRadius: '8px' }}>
+                      CTR {job.id_ctr}
+                    </span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                      Modo: {job.send_mode === 'normal' ? 'Envio Normal' : 'Notificação de Levantamento'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {job.status === 'queued' && (
+                      <>
+                        <span style={{ color: '#FBBF24', fontSize: '14px', fontWeight: '500' }}>⏳ Aguardando vez na fila...</span>
+                        <button type="button" onClick={() => removeSendingJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer' }} title="Remover da Fila"><Trash2 size={18} /></button>
+                      </>
+                    )}
+                    {job.status === 'processing' && (
+                      <span style={{ color: '#3B82F6', fontSize: '14px', fontWeight: '600' }}>🔄 A Disparar Mensagens Agora...</span>
+                    )}
+                    {job.status === 'completed' && (
+                      <span style={{ color: '#10B981', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={18} /> Envio Concluído!</span>
+                    )}
+                    {job.status === 'error' && (
+                      <span style={{ color: '#F87171', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertCircle size={18} /> Falhou</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
