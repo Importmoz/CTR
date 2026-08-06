@@ -39,15 +39,26 @@ def process_and_clean_data(raw_data, agent_data=None):
     if agent_data is None:
         agent_data = {}
     grouped_data = []
-    current_consignee = None
-    consignee_index = 0
+    current_entry_key = None
     skipped_rows = []
     for index, row in raw_data.iterrows():
         if pd.isna(row.get("ID CODE")) or pd.isna(row.get("CONSIGNEE")):
             skipped_rows.append(f"Linha {index + 2}: {row.to_dict()}")
             continue
-        id_code = str(int(row["ID CODE"]) if isinstance(row["ID CODE"], (int, float)) else row["ID CODE"])
+        id_code = str(int(row["ID CODE"]) if isinstance(row["ID CODE"], (int, float)) else row["ID CODE"]).strip()
         consignee = str(row["CONSIGNEE"])
+        
+        no_val = row.get("NO", "")
+        if pd.isna(no_val):
+            no_str = ""
+        elif isinstance(no_val, (int, float)):
+            no_str = str(int(no_val))
+        else:
+            no_str = str(no_val).strip().replace(".0", "")
+            
+        entry_key = (no_str, id_code)
+        is_new_entry = (current_entry_key != entry_key)
+        
         def get_numeric_value(value):
             if pd.isna(value):
                 return 0
@@ -59,10 +70,10 @@ def process_and_clean_data(raw_data, agent_data=None):
                 return 0
         row_data = {
             "STATUS": "PODE LEVANTAR" if get_numeric_value(row.get("DUTY PREPAID", 0)) > 0 else "",
-            "NO": consignee_index + 1 if current_consignee != id_code else "",
-            "ID CODE": id_code if current_consignee != id_code else "",
-            "NAME": consignee if current_consignee != id_code else "",
-            "PHONE NUMBER": str(row.get("PHONE NUMBER", "")) if current_consignee != id_code else "",
+            "NO": no_str if is_new_entry else "",
+            "ID CODE": id_code if is_new_entry else "",
+            "NAME": consignee if is_new_entry else "",
+            "PHONE NUMBER": str(row.get("PHONE NUMBER", "")).replace(".0", "") if is_new_entry else "",
             "ORDER NUMBER": str(row.get("ORDER NUMBER", "")),
             "CARGO DESCRIPTION (PACKAGES)": str(row.get("ITEM NAME", "")),
             "CBM": get_numeric_value(row.get("CBM", 0)),
@@ -87,9 +98,7 @@ def process_and_clean_data(raw_data, agent_data=None):
             "AGENT": agent_data.get(id_code, str(row.get("AGENT", ""))),
         }
         grouped_data.append(row_data)
-        if current_consignee != id_code:
-            consignee_index += 1
-        current_consignee = id_code
+        current_entry_key = entry_key
         
     return pd.DataFrame(grouped_data), skipped_rows
 

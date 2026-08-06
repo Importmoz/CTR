@@ -174,11 +174,13 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
             merge_indices_gen = [df_export.columns.get_loc(col) for col in merge_cols_gen if col in df_export.columns]
             current_values_gen = {idx: None for idx in merge_indices_gen}
             start_rows_gen = {idx: 1 for idx in merge_indices_gen}
+            list_code_idx_gen = df_export.columns.get_loc('LIST_CODE') if 'LIST_CODE' in df_export.columns else -1
             for row_idx in range(len(df_export)):
                 excel_row = row_idx + 1
+                list_code_changed = (row_idx > 0 and str(df_export.iloc[row_idx, list_code_idx_gen]) != str(df_export.iloc[row_idx - 1, list_code_idx_gen])) if list_code_idx_gen >= 0 else False
                 for col_idx in merge_indices_gen:
                     cell_value = str(df_export.iloc[row_idx, col_idx])
-                    if current_values_gen[col_idx] != cell_value:
+                    if current_values_gen[col_idx] != cell_value or list_code_changed:
                         if current_values_gen[col_idx] is not None and start_rows_gen[col_idx] < excel_row:
                             worksheet_jupiter.merge_range(start_rows_gen[col_idx], col_idx, excel_row - 1, col_idx, current_values_gen[col_idx], center_format_jup)
                         current_values_gen[col_idx] = cell_value
@@ -212,11 +214,13 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
             merge_indices = [df_submitted.columns.get_loc(col) for col in merge_cols if col in df_submitted.columns]
             current_values = {idx: None for idx in merge_indices}
             start_rows = {idx: 1 for idx in merge_indices}
+            no_col_idx = df_submitted.columns.get_loc('NO') if 'NO' in df_submitted.columns else -1
             for row_idx in range(len(df_submitted)):
                 excel_row = row_idx + 1
+                no_changed = (row_idx > 0 and str(df_submitted.iloc[row_idx, no_col_idx]) != str(df_submitted.iloc[row_idx - 1, no_col_idx])) if no_col_idx >= 0 else False
                 for col_idx in merge_indices:
                     cell_value = str(df_submitted.iloc[row_idx, col_idx])
-                    if current_values[col_idx] != cell_value:
+                    if current_values[col_idx] != cell_value or no_changed:
                         if current_values[col_idx] is not None and start_rows[col_idx] < excel_row:
                             worksheet1.merge_range(start_rows[col_idx], col_idx, excel_row - 1, col_idx, current_values[col_idx], center_format)
                         current_values[col_idx] = cell_value
@@ -246,21 +250,42 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
         seen_ids = set()
         queue = []
         
-        unique_ids = df_export['ID_CODE'].unique()
-        total_clients = len(unique_ids)
-        
+        unique_entries = []
+        seen_entry_keys = set()
+        for _, row in df_export.iterrows():
+            lc_val = row['LIST_CODE']
+            if pd.isna(lc_val): lc_str = ""
+            elif isinstance(lc_val, (int, float)): lc_str = str(int(lc_val))
+            else: lc_str = str(lc_val).strip().replace(".0", "")
+            
+            idc_val = row['ID_CODE']
+            idc_str = str(int(idc_val)) if isinstance(idc_val, (int, float)) and not pd.isna(idc_val) else str(idc_val).strip()
+            
+            entry_key = (lc_str, idc_str)
+            if entry_key not in seen_entry_keys:
+                seen_entry_keys.add(entry_key)
+                unique_entries.append(entry_key)
+                
+        total_clients = len(unique_entries)
         await progress_callback(30, 100, f"Gerando imagens para {total_clients} clientes...")
         
-        for idx, id_code in enumerate(unique_ids):
-            client_orders = df_export[df_export['ID_CODE'] == id_code].to_dict(orient='records')
+        all_export_records = df_export.to_dict(orient='records')
+        for idx, (target_list_code, target_id_code) in enumerate(unique_entries):
+            client_orders = []
+            for o in all_export_records:
+                o_lc = o['LIST_CODE']
+                o_lc_str = str(int(o_lc)) if isinstance(o_lc, (int, float)) and not pd.isna(o_lc) else str(o_lc).strip().replace(".0", "")
+                o_idc = o['ID_CODE']
+                o_idc_str = str(int(o_idc)) if isinstance(o_idc, (int, float)) and not pd.isna(o_idc) else str(o_idc).strip()
+                if o_lc_str == target_list_code and o_idc_str == target_id_code:
+                    client_orders.append(o)
             
+            if not client_orders:
+                continue
             first_order = client_orders[0]
             name = first_order['NAME']
-            list_code = first_order['LIST_CODE']
-            if isinstance(list_code, float):
-                list_code = int(list_code)
-            list_code = str(list_code)
-            id_code_str = str(int(id_code)) if isinstance(id_code, float) else str(id_code)
+            list_code = target_list_code
+            id_code_str = target_id_code
             phone = first_order['PHONE_NUMBER']
             bank = first_order['BANK_IN']
             
@@ -284,7 +309,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                 container_number, loading_date.strftime("%Y-%m-%d"), expected_date.strftime("%Y-%m-%d"),
                 payment_deadline_str, combined_cbm, combined_pkgs, combined_cargo, combined_total, bank_info
             )
-            md_filename = f"{id_code_str}-{id_ctr}.md"
+            md_filename = f"{safe_list_code}_{id_code_str}-{id_ctr}.md"
             with open(os.path.join(info_dir, md_filename), "w", encoding="utf-8") as f:
                 f.write(msg)
             with open(os.path.join(client_dir, md_filename), "w", encoding="utf-8") as f:
@@ -292,7 +317,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                 
             table_bank_info = None if combined_total == 0 else bank_info
             html_table = generate_html_table(client_orders, container_number, table_bank_info)
-            img_filename = f"{id_code_str}-{id_ctr}.png"
+            img_filename = f"{safe_list_code}_{id_code_str}-{id_ctr}.png"
             hti.output_path = info_dir
             
             # Executar html2image de forma sincrona mas evitar travar o event loop
