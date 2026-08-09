@@ -42,7 +42,7 @@ export default function History() {
 
 
       {/* KPI & Reports Summary section */}
-      <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: '32px', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.36)', padding: '24px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: '32px', paddingTop: '16px' }}>
         <div className="flex-row items-center justify-between" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Activity color="var(--primary)" size={28} />
@@ -137,9 +137,9 @@ export default function History() {
             <h4 style={{ fontSize: '16px', color: 'white', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '600', textAlign: 'left', flexShrink: 0 }}>
               <Layers size={18} color="var(--primary)" /> Histórico Geral de Operações Processadas
             </h4>
-            <div style={{ overflow: 'auto', flex: 1, minHeight: 0, borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ overflow: 'auto', flex: 1, minHeight: 0, borderRadius: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(8px)', zIndex: 1 }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-dark)', zIndex: 1 }}>
                   <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     <th style={{ padding: '10px 16px', fontWeight: '500', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CTR</th>
                     <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '500', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Atualização</th>

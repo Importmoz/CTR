@@ -565,7 +565,7 @@ export default function Dashboard() {
         </div>
         </div>
       ) : (
-        <div className="glass-panel animate-fade-in" style={{ marginTop: '0', maxWidth: '1024px', width: '100%', margin: '0 auto' }}>
+        <div className="animate-fade-in" style={{ marginTop: '0', maxWidth: '1024px', width: '100%', margin: '0 auto', padding: '24px 0' }}>
           <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <List size={22} color="var(--primary)" />
@@ -585,8 +585,9 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {conversionQueue.map((job) => (
               <div key={job.job_id} style={{
-                background: 'rgba(15, 23, 42, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                 borderRadius: '8px',
                 padding: '8px 12px',
                 display: 'flex',
@@ -597,7 +598,7 @@ export default function Dashboard() {
                 {/* Left: CTR Info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '150px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
-                    CTR {job.id_ctr}
+                    {job.id_ctr}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                     {job.params?.dest_sel || 'MAPUTO'}
@@ -827,10 +828,10 @@ export default function Dashboard() {
           <div className="animate-fade-in">
             {/* O Resumo Compacto anterior foi movido para ícones ao lado do dropdown! */}
 
-            <div className="glass-panel" style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '24px' }}>
               <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-dark)', zIndex: 1 }}>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '6px 10px', fontWeight: '500' }}>Código</th>
                       <th style={{ padding: '6px 10px', fontWeight: '500' }}>ID Code</th>

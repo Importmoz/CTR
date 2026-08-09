@@ -23,6 +23,7 @@ export default function SendPanel() {
 
   const [isSending, setIsSending] = useState(false);
   const [retryingIndex, setRetryingIndex] = useState(null);
+  const [activeView, setActiveView] = useState('envio');
 
   useEffect(() => {
     fetchSessions();
@@ -237,12 +238,39 @@ export default function SendPanel() {
 
   return (
     <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <h2 style={{ flexShrink: 0 }}>Painel de Envio</h2>
-      <p className="text-muted" style={{ marginBottom: '24px', flexShrink: 0 }}>Controle os envios de WhatsApp para a sua remessa.</p>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0, flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Painel de Envio</h2>
+          <p className="text-muted" style={{ margin: '4px 0 0 0' }}>Controle os envios de WhatsApp para a sua remessa.</p>
+        </div>
 
-      <div className="flex-row gap-6" style={{ flex: 1, overflow: 'hidden' }}>
-        <div className="glass-panel" style={{ flex: '1', minWidth: '250px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 'fit-content', maxHeight: '100%' }}>
-          <h3 style={{ flexShrink: 0 }}>Sessões Gravadas</h3>
+        {/* Toggle Switch */}
+        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <button 
+            onClick={() => setActiveView('envio')}
+            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: activeView === 'envio' ? 'var(--primary)' : 'transparent', color: activeView === 'envio' ? '#fff' : 'var(--text-muted)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s' }}
+          >
+            Configuração
+          </button>
+          <button 
+            onClick={() => setActiveView('fila')}
+            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: activeView === 'fila' ? 'var(--primary)' : 'transparent', color: activeView === 'fila' ? '#fff' : 'var(--text-muted)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            Fila de Disparo
+            {sendingJobs.length > 0 && (
+              <span style={{ background: activeView === 'fila' ? 'rgba(255,255,255,0.2)' : 'var(--primary)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' }}>
+                {sendingJobs.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {activeView === 'envio' && (
+        <div className="flex-row gap-6 animate-fade-in" style={{ flex: 1, overflow: 'visible', paddingTop: '16px' }}>
+        <div style={{ flex: '1', minWidth: '250px', display: 'flex', flexDirection: 'column', overflow: 'visible', height: '100%' }}>
+          <h3 style={{ flexShrink: 0, paddingLeft: '4px' }}>Sessões Gravadas</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 50px)', alignContent: 'start', gap: '8px', marginTop: '16px', overflowY: 'auto' }}>
             {sessions.length === 0? (
               <p className="text-muted text-sm">Sem sessões ativas.</p>
@@ -261,14 +289,14 @@ export default function SendPanel() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 'fit-content', maxHeight: '100%' }}>
+        <div style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'visible', height: '100%' }}>
           {loading? (
             <div className="flex-col items-center justify-center py-8" style={{ flex: 1 }}>
               <div className="spinner"></div>
               <p className="mt-4 text-muted">A carregar...</p>
             </div>
           ) : queue.length > 0? (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'visible' }}>
               <div className="flex-row justify-between items-center flex-wrap gap-4" style={{ marginBottom: '24px' }}>
                 <h3>Mensagens ({queue.length})</h3>
                 <div className="flex-row gap-4 items-center">
@@ -399,7 +427,7 @@ export default function SendPanel() {
 
               <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-dark)', zIndex: 1 }}>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '6px 10px', fontWeight: '500' }}>Código</th>
                       <th style={{ padding: '6px 10px', fontWeight: '500' }}>Nome</th>
@@ -465,11 +493,23 @@ export default function SendPanel() {
           )}
         </div>
       </div>
+      )}
 
       {/* PAINEL DE MONITORAMENTO DA FILA DE ENVIO WHATSAPP */}
-      {sendingJobs.length > 0 && (
-        <div className="glass-panel animate-fade-in" style={{ marginTop: '28px' }}>
-          <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+      {activeView === 'fila' && (
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div className="animate-fade-in" style={{ marginTop: '0', maxWidth: '1024px', width: '100%', margin: '0 auto', padding: '24px 0' }}>
+          {sendingJobs.length === 0 ? (
+            <div className="flex-col items-center justify-center py-8" style={{ minHeight: '300px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '16px' }}>
+                <CheckCircle2 size={40} color="#10B981" />
+              </div>
+              <h3 style={{ margin: 0, marginBottom: '8px' }}>Fila Limpa</h3>
+              <p className="text-muted">Não existem envios pendentes ou em execução no momento.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <List size={22} color="var(--success)" />
               <h3 style={{ margin: 0, fontSize: '18px' }}>Fila de Disparo WhatsApp ({sendingJobs.length} em fila)</h3>
@@ -485,46 +525,72 @@ export default function SendPanel() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {sendingJobs.map((job) => (
               <div key={job.job_id} style={{
-                background: 'rgba(15, 23, 42, 0.75)',
+                background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '16px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                borderRadius: '8px',
+                padding: '8px 12px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: 'white', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '4px 12px', borderRadius: '8px' }}>
-                      CTR {job.id_ctr}
-                    </span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      Modo: {job.send_mode === 'normal' ? 'Envio Normal' : 'Notificação de Levantamento'}
-                    </span>
+                {/* Left: CTR Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '150px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--success)' }}>
+                    {job.id_ctr}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Modo: {job.send_mode === 'levantamento' ? 'Levantamento' : 'Normal'}
+                  </span>
+                </div>
+                  
+                {/* Middle: Progress and Stats */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Progresso: {job.progress} de {job.total} mensagens</span>
+                    {job.status === 'completed' && <span style={{ color: '#10B981', flexShrink: 0, marginLeft: '8px' }}>Disparo Concluído!</span>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {job.status === 'queued' && (
-                      <>
-                        <span style={{ color: '#FBBF24', fontSize: '14px', fontWeight: '500' }}>⏳ Aguardando vez na fila...</span>
-                        <button type="button" onClick={() => removeSendingJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer' }} title="Remover da Fila"><Trash2 size={18} /></button>
-                      </>
-                    )}
-                    {job.status === 'processing' && (
-                      <span style={{ color: '#3B82F6', fontSize: '14px', fontWeight: '600' }}>🔄 A Disparar Mensagens Agora...</span>
-                    )}
-                    {job.status === 'completed' && (
-                      <span style={{ color: '#10B981', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={18} /> Envio Concluído!</span>
-                    )}
-                    {job.status === 'error' && (
-                      <span style={{ color: '#F87171', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertCircle size={18} /> Falhou</span>
-                    )}
+                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="progress-bar" style={{
+                      width: `${job.total > 0 ? (job.progress / job.total) * 100 : 0}%`,
+                      background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--success)'
+                    }}></div>
                   </div>
+                </div>
+
+                {/* Right: Status */}
+                <div style={{ width: '120px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                  {job.status === 'queued' && (
+                    <>
+                      <span style={{ color: '#FBBF24', fontSize: '12px', fontWeight: '500' }}>Na Fila</span>
+                      <button type="button" onClick={() => removeSendingJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0 }} title="Remover da Fila"><Trash2 size={14} /></button>
+                    </>
+                  )}
+                  {job.status === 'processing' && (
+                    <span style={{ color: '#60A5FA', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className="spinner" style={{ width: '12px', height: '12px', borderWidth: '2px' }}></div> A Enviar...
+                    </span>
+                  )}
+                  {job.status === 'completed' && (
+                    <span style={{ color: '#10B981', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={14} /> Concluído
+                    </span>
+                  )}
+                  {job.status === 'error' && (
+                    <span style={{ color: '#F87171', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <AlertCircle size={14} /> Falhou
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
+            </div>
+            </>
+          )}
           </div>
         </div>
       )}
