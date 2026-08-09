@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { UploadCloud, CheckCircle2, AlertCircle, DownloadCloud, Calendar, ChevronDown, MapPin, Navigation, ExternalLink, Copy, FileText, Folder, Check, Trash2, Database, History as HistoryIcon, List } from 'lucide-react';
+import { UploadCloud, CheckCircle2, AlertCircle, DownloadCloud, Calendar, ChevronDown, MapPin, Navigation, ExternalLink, Copy, FileText, Folder, Check, Trash2, Database, History as HistoryIcon, List, MessageCircle } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { API_BASE, WS_BASE } from '../config/api';
+import { MessageStatusPill } from '../components/MessageStatusPill';
 
 const formatLocalDate = (date) => {
   if (!date) return '';
@@ -39,18 +40,51 @@ export default function Dashboard() {
   const [historyData, setHistoryData] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Conversation Modal States
+  const [showConversation, setShowConversation] = useState(false);
+  const [currentConversation, setCurrentConversation] = useState([]);
+  const [conversationLoading, setConversationLoading] = useState(false);
+  const [conversationPhone, setConversationPhone] = useState('');
+
   const [summary, setSummary] = useState({ total: 0, success: 0, error: 0 });
   const [gdriveInfo, setGdriveInfo] = useState({ sheetId: '', folderId: '' });
   const [activeView, setActiveView] = useState('upload'); // 'upload' ou 'monitor'
   const [conversionQueue, setConversionQueue] = useState([]);
   const wsRef = useRef(null);
   const fileInputRef = useRef(null);
+  const syncIntervalRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+
   useEffect(() => {
     fetchSessions();
     fetchConversionQueue();
     const interval = setInterval(fetchConversionQueue, 2500);
-    return () => clearInterval(interval);
+    return () => {
+        clearInterval(interval);
+        if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
   }, []);
+
+  const openConversation = async (phone) => {
+    setConversationPhone(phone);
+    setShowConversation(true);
+    setConversationLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/whatsapp/conversation/${phone}?limit=50&offset=1`);
+      const data = await res.json();
+      if (data.success && data.data && data.data.status === "1") {
+        setCurrentConversation(data.data.message || []);
+      } else {
+        setCurrentConversation([]);
+      }
+    } catch (e) {
+      setCurrentConversation([]);
+    } finally {
+      setConversationLoading(false);
+    }
+  };
 
   // Auto-select latest session if none is selected
   useEffect(() => {
@@ -847,26 +881,29 @@ export default function Dashboard() {
                         <td style={{ padding: '4px 10px' }}>{item.list_code}</td>
                         <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
                         <td style={{ padding: '4px 10px' }}>{item.name}</td>
-                        <td style={{ padding: '4px 10px' }}>{item.phone}</td>
                         <td style={{ padding: '4px 10px' }}>
-                          <span style={{
-                            padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', minWidth: '70px', textAlign: 'center',
-                            background: item.status === 'Pendente' ? 'var(--glass-bg-active)' : (item.status && item.status.includes('Erro')) ? 'var(--danger-bg)' : 'var(--success-bg)',
-                            color: item.status === 'Pendente' ? 'var(--text-muted)' : (item.status && item.status.includes('Erro')) ? 'var(--danger)' : 'var(--success)',
-                            border: item.status === 'Pendente' ? '1px solid var(--glass-border)' : '1px solid transparent'
-                          }}>
-                            {item.status}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {item.phone}
+                            {/* 
+                            {item.phone && (
+                              <button 
+                                onClick={() => openConversation(item.phone)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
+                                title="Ver Conversa"
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg-hover)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <MessageCircle size={14} />
+                              </button>
+                            )}
+                            */}
+                          </div>
                         </td>
                         <td style={{ padding: '4px 10px' }}>
-                          <span style={{
-                            padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', minWidth: '70px', textAlign: 'center',
-                            background: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--glass-bg-active)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger-bg)' : 'var(--success-bg)',
-                            color: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--text-muted)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger)' : 'var(--success)',
-                            border: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? '1px solid var(--glass-border)' : '1px solid transparent'
-                          }}>
-                            {item.status_levantamento || 'Pendente'}
-                          </span>
+                          <MessageStatusPill status={item.status} wa_message_id={item.wa_message_id} />
+                        </td>
+                        <td style={{ padding: '4px 10px' }}>
+                          <MessageStatusPill status={item.status_levantamento} wa_message_id={item.wa_message_id_levantamento} />
                         </td>
                         <td style={{ padding: '4px 10px', color: 'var(--danger)', fontSize: '11px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.error ? `Normal: ${item.error}` : ''}
@@ -888,6 +925,109 @@ export default function Dashboard() {
       </div>
       )}
       </div>
+
+      {showConversation && (
+        <div className="modal-overlay" onClick={() => setShowConversation(false)}>
+          <div className="modal-content animate-fade-in" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', height: '600px', display: 'flex', flexDirection: 'column', padding: 0 }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--panel-bg-solid)', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}>
+                <MessageCircle size={18} color="var(--primary)" />
+                Conversa: {conversationPhone}
+              </h3>
+              <button onClick={() => setShowConversation(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: '16px', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+              {conversationLoading ? (
+                <div className="flex-col items-center justify-center" style={{ height: '100%' }}>
+                   <div className="spinner"></div>
+                   <p className="mt-4 text-muted">A carregar mensagens...</p>
+                </div>
+              ) : currentConversation.length === 0 ? (
+                <div className="flex-col items-center justify-center" style={{ height: '100%' }}>
+                  <p className="text-muted">Nenhuma mensagem encontrada para este número.</p>
+                </div>
+              ) : (
+                [...currentConversation].reverse().map((msg, i) => (
+                  <div key={i} style={{ 
+                    alignSelf: msg.sender === 'bot' ? 'flex-end' : 'flex-start',
+                    background: msg.sender === 'bot' ? 'var(--primary)' : 'var(--glass-bg-active)',
+                    color: msg.sender === 'bot' ? 'white' : 'var(--text-main)',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    borderBottomRightRadius: msg.sender === 'bot' ? '4px' : '12px',
+                    borderBottomLeftRadius: msg.sender === 'bot' ? '12px' : '4px',
+                    maxWidth: '85%',
+                    boxShadow: '0 2px 4px var(--shadow-color)'
+                  }}>
+                     <div style={{ fontSize: '14px', wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                       {(() => {
+                          try {
+                            const content = JSON.parse(msg.message_content);
+                            
+                            let textContent = null;
+                            let imageContent = null;
+
+                            const extractContent = (obj) => {
+                              if (!obj) return;
+                              if (obj.messages && obj.messages[0]) {
+                                if (obj.messages[0].text) textContent = obj.messages[0].text.body;
+                                if (obj.messages[0].image && obj.messages[0].image.url) imageContent = obj.messages[0].image.url;
+                              }
+                              if (obj.message_echoes && obj.message_echoes[0]) {
+                                if (obj.message_echoes[0].text) textContent = obj.message_echoes[0].text.body;
+                                if (obj.message_echoes[0].image && obj.message_echoes[0].image.url) imageContent = obj.message_echoes[0].image.url;
+                              }
+                              if (obj.entry) {
+                                obj.entry.forEach(e => {
+                                  if (e.changes) e.changes.forEach(c => {
+                                     if (c.value) extractContent(c.value);
+                                  });
+                                });
+                              }
+                              if (obj.mime_type && obj.mime_type.startsWith('image/')) {
+                                 if (obj.url) imageContent = obj.url;
+                              }
+                              if (obj.components && Array.isArray(obj.components)) {
+                                obj.components.forEach(comp => {
+                                  if (comp.type === 'body' && comp.text) textContent = comp.text;
+                                  if (comp.type === 'header' && comp.format === 'image' && comp.link) imageContent = comp.link;
+                                });
+                              }
+                            };
+
+                            extractContent(content);
+
+                            if (textContent || imageContent) {
+                              return (
+                                <>
+                                  {imageContent && <div style={{ marginBottom: '8px' }}><img src={imageContent.replace(/\\\//g, '/')} alt="Anexo" style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }} /></div>}
+                                  {textContent && <div>{textContent}</div>}
+                                  {!textContent && imageContent && <div style={{ fontStyle: 'italic', opacity: 0.8 }}>[Anexo de Imagem]</div>}
+                                </>
+                              );
+                            }
+
+                            if (content.template) return `[Template: ${content.template.name}]`;
+                            if (content.interactive) return `[Interativo] ${content.interactive.header?.text || ''}\n${content.interactive.body?.text || ''}`;
+                            if (content.text) return content.text.body;
+                            
+                            // If we couldn't parse it beautifully, return raw JSON slightly smaller and faded
+                            return <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '11px', opacity: 0.6, fontFamily: 'monospace' }}>{msg.message_content}</pre>;
+                          } catch(e) {
+                            return msg.message_content;
+                          }
+                       })()}
+                     </div>
+                     <div style={{ fontSize: '10px', marginTop: '6px', textAlign: 'right', opacity: 0.7 }}>
+                       {msg.conversation_time} {msg.message_status ? `• ${msg.message_status}` : ''}
+                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

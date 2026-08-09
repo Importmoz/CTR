@@ -465,3 +465,39 @@ async def retry_single_item_endpoint(
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Erro ao reenviar mensagem"))
     return result
+
+@app.get("/whatsapp/conversation/{phone_number}")
+def get_conversation_endpoint(phone_number: str, limit: int = 50, offset: int = 1):
+    from core.whatsapp import get_whatchimp_conversation
+    from core.database import get_setting
+    
+    import os
+    api_token = get_setting("whatchimp_api_token", os.getenv("WHATCHIMP_API_TOKEN", ""))
+    phone_number_id = get_setting("whatchimp_phone_id", os.getenv("WHATCHIMP_PHONE_ID", ""))
+    
+    if not api_token or not phone_number_id:
+        return {"success": False, "message": "Credenciais do WhatChimp não configuradas"}
+        
+    result = get_whatchimp_conversation(api_token, phone_number_id, phone_number, limit, offset)
+    return {"success": True, "data": result}
+
+@app.get("/whatsapp/status/{wa_message_id}")
+def get_whatsapp_status(wa_message_id: str):
+    from core.whatsapp import get_whatchimp_message_status
+    from core.database import get_setting
+    import os
+    
+    api_token = get_setting("whatchimp_api_token", os.getenv("WHATCHIMP_API_TOKEN", ""))
+    
+    if not api_token:
+        return {"success": False, "message": "API Token do WhatChimp não configurado"}
+        
+    try:
+        res = get_whatchimp_message_status(api_token, wa_message_id)
+        if str(res.get("status")) == "1":
+            return {"success": True, "data": res.get("message", {})}
+        else:
+            return {"success": False, "message": res.get("message", "Erro desconhecido")}
+    except Exception as e:
+        logger.error(f"Erro ao buscar status WhatChimp: {e}")
+        return {"success": False, "message": str(e)}

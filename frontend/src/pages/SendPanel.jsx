@@ -4,6 +4,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { setHours, setMinutes } from 'date-fns';
 import { API_BASE } from '../config/api';
+import { MessageStatusPill } from '../components/MessageStatusPill';
 
 export default function SendPanel() {
   const [sessions, setSessions] = useState([]);
@@ -439,24 +440,14 @@ export default function SendPanel() {
                     {queue.map((item, idx) => {
                     const currentStatus = sendMode === 'levantamento' ? (item.status_levantamento || 'Pendente') : (item.status || 'Pendente');
                     const currentError = sendMode === 'levantamento' ? (item.error_levantamento || '') : (item.error || '');
+                    const currentWaId = sendMode === 'levantamento' ? item.wa_message_id_levantamento : item.wa_message_id;
                     return (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
                       <td style={{ padding: '4px 10px' }}>{item.name}</td>
                       <td style={{ padding: '4px 10px' }}>{item.phone}</td>
                       <td style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                        <span style={{
-                          padding: '4px 10px', 
-                          borderRadius: '12px', 
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          background: currentStatus === 'Pendente'? 'var(--glass-bg-hover)' : currentStatus.includes('Erro')? 'var(--danger-bg)' : 'var(--success-bg)',
-                          color: currentStatus === 'Pendente'? 'var(--text-main)' : currentStatus.includes('Erro')? 'var(--danger)' : 'var(--success)',
-                          border: currentStatus === 'Pendente'? '1px solid var(--glass-border)' : '1px solid transparent'
-                        }}>
-                          {currentStatus}
-                          {currentError && <div style={{ fontSize: '10px', marginTop: '2px' }}>{currentError}</div>}
-                        </span>
+                        <MessageStatusPill status={currentStatus} wa_message_id={currentWaId} currentError={currentError} />
                         {currentStatus.includes('Erro') && (
                           <button
                             type="button"

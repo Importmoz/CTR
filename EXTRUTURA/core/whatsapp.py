@@ -123,3 +123,70 @@ def send_whatchimp_template(api_token, phone_number_id, phone_number, template_i
     except Exception as e:
         logger.error(f"Erro de exceção no template: {e}")
         return {"status": "0", "message": str(e)}
+
+def get_whatchimp_conversation(api_token, phone_number_id, phone_number, limit=50, offset=1):
+    url = "https://app.whatchimp.com/api/v1/whatsapp/get/conversation"
+    
+    # Limpa e formata o número de telefone
+    phone_str = str(phone_number).replace("+", "").replace(" ", "").replace("-", "").strip()
+    if phone_str.endswith(".0"):
+        phone_str = phone_str[:-2]
+    
+    # Se for um número de Moçambique de 9 dígitos, adiciona o 258
+    if len(phone_str) == 9 and phone_str.startswith("8"):
+        phone_str = f"258{phone_str}"
+        
+    payload = {
+        'apiToken': api_token,
+        'phone_number_id': phone_number_id,
+        'phone_number': phone_str,
+        'limit': limit,
+        'offset': offset
+    }
+    
+    logger.info(f"Fetching conversation for {phone_str} (limit: {limit}, offset: {offset})")
+    
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        scraper = cloudscraper.create_scraper()
+        response = scraper.post(url, headers=headers, data=payload, timeout=30)
+        try:
+            result = response.json()
+        except Exception as json_err:
+            logger.error(f"Fetch conversation falhou. Code: {response.status_code}, Body: {response.text}")
+            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+            
+        return result
+    except Exception as e:
+        logger.error(f"Erro de exceção ao buscar conversa: {e}")
+        return {"status": "0", "message": str(e)}
+
+def get_whatchimp_message_status(api_token, wa_message_id):
+    url = "https://app.whatchimp.com/api/v1/whatsapp/get/message-status"
+    
+    payload = {
+        'apiToken': api_token,
+        'wa_message_id': wa_message_id
+    }
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        scraper = cloudscraper.create_scraper()
+        response = scraper.post(url, headers=headers, data=payload, timeout=30)
+        try:
+            result = response.json()
+            return result
+        except Exception as json_err:
+            logger.error(f"Erro ao analisar JSON do status da mensagem. Code: {response.status_code}, Body: {response.text}")
+            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+            
+    except Exception as e:
+        logger.error(f"Erro de exceção ao buscar status da mensagem: {e}")
+        return {"status": "0", "message": str(e)}

@@ -215,10 +215,15 @@ class QueueManager:
                 
                 res1 = send_whatchimp_template(opt_wc_token, opt_wc_phone, target_phone, t1_id, t_vars)
                 if str(res1.get("status")) == "1":
+                    last_wa_id = res1.get("wa_message_id")
                     if t2_id:
                         time.sleep(8)
                         res2 = send_whatchimp_template(opt_wc_token, opt_wc_phone, target_phone, t2_id, {})
+                        if str(res2.get("status")) == "1" and res2.get("wa_message_id"):
+                            last_wa_id = res2.get("wa_message_id")
                     phone_successes.append(target_phone)
+                    if last_wa_id:
+                        item['wa_message_id_levantamento'] = last_wa_id
             else:
                 upload_res = upload_whatchimp_media(opt_wc_token, opt_wc_phone, item.get('img_path', ''))
                 if str(upload_res.get("status")) == "1":
@@ -235,15 +240,20 @@ class QueueManager:
                         seq = [("alerta_carga_pagar", vars_to_send, 12), (bank_template, {}, 4), ("notas_regras_pagamento", {}, 1)]
                         
                     all_success = True
+                    last_wa_id = None
                     for t_name, t_vars_s, delay in seq:
                         res = send_whatchimp_template(opt_wc_token, opt_wc_phone, target_phone, template_ids[t_name], t_vars_s)
                         if str(res.get("status")) != "1":
                             all_success = False
                             break
+                        if res.get("wa_message_id"):
+                            last_wa_id = res.get("wa_message_id")
                         time.sleep(delay)
                         
                     if all_success:
                         phone_successes.append(target_phone)
+                        if last_wa_id:
+                            item['wa_message_id'] = last_wa_id
                         
         if len(phone_successes) > 0:
             if send_mode == "levantamento":
