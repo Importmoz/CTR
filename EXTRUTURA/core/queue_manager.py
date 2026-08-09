@@ -95,7 +95,7 @@ class QueueManager:
                         if not os.path.exists(file_path):
                             raise Exception("Ficheiro temporário de upload não encontrado.")
                             
-                        df = read_excel_smart_path(file_path)
+                        df = await asyncio.to_thread(read_excel_smart_path, file_path)
                         ld = datetime.strptime(params["loading_date"], "%Y-%m-%d") if params.get("loading_date") else None
                         ed = datetime.strptime(params["expected_date"], "%Y-%m-%d") if params.get("expected_date") else None
                         pd_date = datetime.strptime(params["payment_deadline"], "%Y-%m-%d") if params.get("payment_deadline") else None

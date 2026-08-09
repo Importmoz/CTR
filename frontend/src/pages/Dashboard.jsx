@@ -27,6 +27,8 @@ export default function Dashboard() {
   });
   const [isOriginOpen, setIsOriginOpen] = useState(false);
   const [isDestOpen, setIsDestOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const [isDistModeOpen, setIsDistModeOpen] = useState(false);
   const [status, setStatus] = useState('idle'); // idle, uploading, processing, completed, error
   const [progress, setProgress] = useState({ percent: 0, message: '' });
@@ -49,6 +51,14 @@ export default function Dashboard() {
     const interval = setInterval(fetchConversionQueue, 2500);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-select latest session if none is selected
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedSession) {
+      loadSessionHistory({ target: { value: sessions[0].id_ctr } });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions]);
 
   const fetchConversionQueue = async () => {
     try {
@@ -189,7 +199,8 @@ export default function Dashboard() {
         if (fileInputRef.current) fileInputRef.current.value = '';
         fetchConversionQueue();
         fetchSessions();
-        alert(`✅ CTR adicionado à Fila de Conversão em background!\nPode carregar logo outro CTR se desejar.`);
+        setShowUploadForm(false);
+        alert(`✅ CTR adicionado à Fila de Conversão em background!`);
       } else {
         setStatus('error');
         setProgress({ percent: 0, message: result.detail || 'Erro no upload' });
@@ -237,7 +248,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container animate-fade-in">
+    <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', paddingBottom: 0 }}>
       <div className="flex-row items-center justify-between" style={{ marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -301,31 +312,49 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="flex-row items-center gap-2" style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '20px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px var(--success)' }}></div>
-            <span style={{ fontSize: '13px', color: 'var(--success)', fontWeight: '600' }}>API Online</span>
-          </div>
+
         </div>
       </div>
 
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '40px', minHeight: 0, paddingRight: '8px', display: 'flex', flexDirection: 'column' }}>
+      
       {activeView === 'upload' ? (
-        <div className="animate-fade-in">
-          <div className="flex-row gap-6" style={{ flexWrap: 'wrap' }}>
-            <div className="glass-panel" style={{ flex: '1', minWidth: '300px' }}>
-              <h3 style={{ marginBottom: '24px' }}>Ficheiro Excel</h3>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'flex-start' }}>
+          {conversionQueue.length > 0 && (
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowUploadForm(!showUploadForm)}
+                className="btn"
+                style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--primary)', border: '1px solid rgba(59, 130, 246, 0.3)' }}
+              >
+                {showUploadForm ? <><List size={16} /> Ver Fila ({conversionQueue.length})</> : <><UploadCloud size={16} /> Novo CTR</>}
+              </button>
+            </div>
+          )}
+
+          {(conversionQueue.length === 0 || showUploadForm) ? (
+            <div className="flex-row gap-6 animate-fade-in" style={{ flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch' }}>
+            <div className="glass-panel" style={{ flex: '0 1 500px', width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ marginBottom: '16px' }}>Ficheiro Excel</h3>
           
           <div 
+            className="dropzone-area"
             onClick={() => fileInputRef.current.click()}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             style={{
               border: '2px dashed var(--border-color)',
               borderRadius: '12px',
-              padding: '48px 24px',
               textAlign: 'center',
               cursor: 'pointer',
               background: 'rgba(15, 23, 42, 0.4)',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center'
             }}
             onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
@@ -346,8 +375,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ flex: '2', minWidth: '350px' }}>
-          <h3 style={{ marginBottom: '24px' }}>Parâmetros da Remessa</h3>
+        <div className="glass-panel" style={{ flex: '0 1 500px', width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <h3 style={{ marginBottom: '16px' }}>Parâmetros da Remessa</h3>
           <form onSubmit={handleSubmit} className="flex-col gap-4">
             <div className="flex-row gap-4">
               <div style={{ width: '125px' }}>
@@ -417,25 +446,6 @@ export default function Dashboard() {
                 )}
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'transparent', userSelect: 'none' }}>-</label>
-                <div 
-                  className="input-wrapper" 
-                  style={{ cursor: 'pointer', padding: '8px 12px', background: formData.send_whatsapp ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)', borderColor: formData.send_whatsapp ? 'var(--success)' : 'var(--border-color)', transition: 'all 0.2s', width: '125px' }}
-                  onClick={() => setFormData({...formData, send_whatsapp: !formData.send_whatsapp})}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={formData.send_whatsapp} 
-                      onChange={e => setFormData({...formData, send_whatsapp: e.target.checked})} 
-                      style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--success)' }} 
-                      onClick={e => e.stopPropagation()}
-                    />
-                    <span style={{ fontSize: '14px', color: formData.send_whatsapp ? 'var(--success)' : 'var(--text-main)', fontWeight: formData.send_whatsapp ? '500' : '400' }}>WhatsApp</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="flex-row" style={{ gap: '20px', flexWrap: 'wrap' }}>
@@ -517,6 +527,26 @@ export default function Dashboard() {
                   <input type="number" step="10000" className="glass-input" value={formData.filipe_target} onChange={e => setFormData({...formData, filipe_target: e.target.value})} style={{ width: '150px' }} />
                 </div>
               )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'transparent', userSelect: 'none' }}>-</label>
+                <div 
+                  className="input-wrapper" 
+                  style={{ cursor: 'pointer', padding: '8px 12px', background: formData.send_whatsapp ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)', borderColor: formData.send_whatsapp ? 'var(--success)' : 'var(--border-color)', transition: 'all 0.2s', width: '125px' }}
+                  onClick={() => setFormData({...formData, send_whatsapp: !formData.send_whatsapp})}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.send_whatsapp} 
+                      onChange={e => setFormData({...formData, send_whatsapp: e.target.checked})} 
+                      style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--success)' }} 
+                      onClick={e => e.stopPropagation()}
+                    />
+                    <span style={{ fontSize: '14px', color: formData.send_whatsapp ? 'var(--success)' : 'var(--text-main)', fontWeight: formData.send_whatsapp ? '500' : '400' }}>WhatsApp</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <hr style={{ borderTop: '1px solid var(--border-color)', borderBottom: 'none', margin: '8px 0' }} />
@@ -533,11 +563,9 @@ export default function Dashboard() {
             </div>
           </form>
         </div>
-      </div>
-
-      {/* NOVO PAINEL DAS FILAS DE CONVERSÃO */}
-      {activeView === 'upload' && conversionQueue.length > 0 && (
-        <div className="glass-panel animate-fade-in" style={{ marginTop: '28px' }}>
+        </div>
+      ) : (
+        <div className="glass-panel animate-fade-in" style={{ marginTop: '0', maxWidth: '1024px', width: '100%', margin: '0 auto' }}>
           <div className="flex-row justify-between items-center" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <List size={22} color="var(--primary)" />
@@ -554,55 +582,58 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {conversionQueue.map((job) => (
               <div key={job.job_id} style={{
-                background: 'rgba(15, 23, 42, 0.75)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '16px',
+                background: 'rgba(15, 23, 42, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                padding: '8px 12px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '10px'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary)', background: 'rgba(59, 130, 246, 0.15)', padding: '4px 12px', borderRadius: '8px' }}>
-                      CTR {job.id_ctr}
-                    </span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      Destino: {job.params?.dest_sel || 'MAPUTO'}
-                    </span>
+                {/* Left: CTR Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '150px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
+                    CTR {job.id_ctr}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {job.params?.dest_sel || 'MAPUTO'}
+                  </span>
+                </div>
+
+                {/* Middle: Progress and Message */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.message}</span>
+                    {job.status === 'completed' && <span style={{ color: '#10B981', flexShrink: 0, marginLeft: '8px' }}>Sincronizado!</span>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {job.status === 'queued' && (
-                      <>
-                        <span style={{ color: '#FBBF24', fontSize: '14px', fontWeight: '500' }}>⏳ Aguardando na fila...</span>
-                        <button type="button" onClick={() => removeConversionJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer' }} title="Remover da Fila"><Trash2 size={18} /></button>
-                      </>
-                    )}
-                    {job.status === 'processing' && (
-                      <span style={{ color: 'var(--primary)', fontSize: '14px', fontWeight: '600' }}>🔄 Em Processamento ({job.progress}%)</span>
-                    )}
-                    {job.status === 'completed' && (
-                      <span style={{ color: '#10B981', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={18} /> Concluído!</span>
-                    )}
-                    {job.status === 'error' && (
-                      <span style={{ color: '#F87171', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertCircle size={18} /> Falhou</span>
-                    )}
+                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="progress-bar" style={{
+                      width: `${job.progress || 0}%`,
+                      background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--primary)'
+                    }}></div>
                   </div>
                 </div>
 
-                <div className="progress-container" style={{ height: '8px' }}>
-                  <div className="progress-bar" style={{
-                    width: `${job.progress || 0}%`,
-                    background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--primary)'
-                  }}></div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <span>{job.message}</span>
+                {/* Right: Status / Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '100px', justifyContent: 'flex-end' }}>
+                  {job.status === 'queued' && (
+                    <>
+                      <span style={{ color: '#FBBF24', fontSize: '12px', fontWeight: '500' }}>⏳ Na fila</span>
+                      <button type="button" onClick={() => removeConversionJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0 }} title="Remover da Fila"><Trash2 size={16} /></button>
+                    </>
+                  )}
+                  {job.status === 'processing' && (
+                    <span style={{ color: 'var(--primary)', fontSize: '12px', fontWeight: '600' }}>🔄 {job.progress}%</span>
+                  )}
                   {job.status === 'completed' && (
-                    <span style={{ color: '#10B981' }}>Relatório pronto no Google Drive e Banco de Dados!</span>
+                    <span style={{ color: '#10B981', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={14} /> OK</span>
+                  )}
+                  {job.status === 'error' && (
+                    <span style={{ color: '#F87171', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={14} /> Erro</span>
                   )}
                 </div>
               </div>
@@ -702,52 +733,89 @@ export default function Dashboard() {
       )}
       </div>
       ) : (
+
       <div className="animate-fade-in">
-        <div className="glass-panel" style={{ marginBottom: '24px' }}>
-          <h4 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <HistoryIcon size={20} color="var(--primary)" /> Monitorização & Inspeção Detalhada de Projetos
-          </h4>
-          <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '500' }}>Selecione um projeto salvo para detalhar todas as mensagens, aceder a links no Cloud e gerir relatórios:</label>
-          <div style={{ position: 'relative', maxWidth: '450px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
             <div 
               className="input-wrapper" 
-              style={{ cursor: 'pointer', justifyContent: 'space-between', padding: '10px 14px' }}
+              style={{ cursor: 'pointer', justifyContent: 'space-between', padding: '10px 14px', whiteSpace: 'nowrap' }}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              title={selectedSession ? `Atualizado a ${sessions.find(s => s.id_ctr === selectedSession)?.updated_at || '...'}` : ''}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <List size={18} color="var(--primary)" />
-                <span style={{ fontSize: '14px', fontWeight: selectedSession ? '600' : '400', color: selectedSession ? 'white' : 'var(--text-main)' }}>
-                  {selectedSession ? `${selectedSession} (Atualizado a ${sessions.find(s => s.id_ctr === selectedSession)?.updated_at || '...'})` : '-- Escolha uma sessão processada --'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <List size={18} color="var(--primary)" />
+                  <span style={{ fontSize: '14px', fontWeight: selectedSession ? '600' : '400', color: selectedSession ? 'white' : 'var(--text-main)' }}>
+                    {selectedSession ? selectedSession : (sessions.length > 0 ? 'A carregar...' : 'Nenhum projeto salvo')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <ChevronDown size={16} color="var(--text-muted)" />
+                </div>
               </div>
-              <ChevronDown size={16} color="var(--text-muted)" />
             </div>
             
             {isDropdownOpen && (
               <div style={{
-                position: 'absolute', top: '100%', left: 0, width: '100%', marginTop: '4px',
+                position: 'absolute', top: '100%', left: 0, minWidth: '240px', marginTop: '4px',
                 background: 'rgba(15, 23, 42, 0.98)', border: '1px solid var(--border-color)',
-                borderRadius: '12px', overflow: 'hidden', zIndex: 50,
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)', maxHeight: '300px', overflowY: 'auto'
+                borderRadius: '12px', zIndex: 50, padding: '8px',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)', maxHeight: '300px', overflowY: 'auto',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '6px'
               }}>
-                <div 
-                  className="dropdown-item"
-                  style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '14px', color: !selectedSession ? 'var(--primary)' : 'var(--text-main)', background: !selectedSession ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
-                  onClick={() => { loadSessionHistory({target: {value: ''}}); setIsDropdownOpen(false); }}
-                >
-                  -- Escolha uma sessão processada --
-                </div>
                 {sessions.map(s => (
                   <div key={s.id_ctr} className="dropdown-item"
-                    style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '14px', color: selectedSession === s.id_ctr ? 'var(--primary)' : 'var(--text-main)', background: selectedSession === s.id_ctr ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                    title={`Atualizado a ${s.updated_at}`}
+                    style={{ padding: '8px', cursor: 'pointer', fontSize: '14px', color: selectedSession === s.id_ctr ? 'var(--primary)' : 'var(--text-main)', background: selectedSession === s.id_ctr ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)', border: selectedSession === s.id_ctr ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
                     onClick={() => { loadSessionHistory({target: {value: s.id_ctr}}); setIsDropdownOpen(false); }}
                   >
-                    <strong style={{ color: 'white' }}>{s.id_ctr}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>(Atualizado a {s.updated_at})</span>
+                    <strong style={{ color: selectedSession === s.id_ctr ? 'var(--primary)' : 'white' }}>{s.id_ctr}</strong> 
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Novos Ícones de Métricas, Drive e Ações ao lado do Dropdown */}
+          {!loadingHistory && selectedSession && historyData.length > 0 && (
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15, 23, 42, 0.4)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                 
+                 {/* Métricas */}
+                 <div style={{ display: 'flex', gap: '12px', marginRight: '4px', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '12px' }}>
+                    <span title="Total de Mensagens" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-main)' }}><strong>{summary.total}</strong> Total</span>
+                    <span title="Sucessos" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '13px' }}><CheckCircle2 size={16} /> <strong>{summary.success}</strong></span>
+                    <span title="Erros" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--danger)', fontSize: '13px' }}><AlertCircle size={16} /> <strong>{summary.error}</strong></span>
+                 </div>
+
+                 {/* Google Drive Links */}
+                 {gdriveInfo.sheetId && (
+                     <a href={`https://docs.google.com/spreadsheets/d/${gdriveInfo.sheetId}`} target="_blank" rel="noreferrer" title="Abrir Planilha de Pagamentos no Drive" style={{ color: '#10B981', display: 'flex', alignItems: 'center', padding: '6px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', transition: '0.2s' }}>
+                         <FileText size={16} />
+                     </a>
+                 )}
+                 {gdriveInfo.folderId && (
+                     <a href={`https://drive.google.com/drive/folders/${gdriveInfo.folderId}`} target="_blank" rel="noreferrer" title="Abrir Pasta do Contentor no Drive" style={{ color: '#F59E0B', display: 'flex', alignItems: 'center', padding: '6px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px', transition: '0.2s' }}>
+                         <Folder size={16} />
+                     </a>
+                 )}
+
+                 {(gdriveInfo.sheetId || gdriveInfo.folderId) && (
+                     <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }}></div>
+                 )}
+
+                 {/* Action Buttons */}
+                 <button onClick={() => window.location.href = `${API_BASE}/download/csv/${selectedSession}`} title="Baixar Relatório (CSV)" style={{ background: 'transparent', border: 'none', color: '#60A5FA', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
+                     <Database size={16} />
+                 </button>
+                 <button onClick={() => window.location.href = `${API_BASE}/download/zip/${selectedSession}`} title="Baixar ZIP Completo" style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
+                     <DownloadCloud size={16} />
+                 </button>
+                 <button onClick={deleteSession} title="Apagar Sessão e Links" style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
+                     <Trash2 size={16} />
+                 </button>
+             </div>
+          )}
         </div>
 
         {loadingHistory ? (
@@ -757,112 +825,32 @@ export default function Dashboard() {
           </div>
         ) : selectedSession && historyData.length > 0 ? (
           <div className="animate-fade-in">
-            {/* Project Metrics Summary */}
-            <div className="flex-row gap-4" style={{ marginBottom: '24px' }}>
-              <div className="glass-panel" style={{ flex: 1, textAlign: 'center' }}>
-                <p className="text-muted text-sm">Total de Mensagens</p>
-                <h2 style={{ fontSize: '32px', margin: '8px 0 0 0' }}>{summary.total}</h2>
-              </div>
-              <div className="glass-panel" style={{ flex: 1, textAlign: 'center' }}>
-                <p className="text-muted text-sm" style={{ color: 'var(--success)' }}>Enviadas com Sucesso</p>
-                <h2 style={{ fontSize: '32px', margin: '8px 0 0 0', color: 'var(--success)' }}>{summary.success}</h2>
-              </div>
-              <div className="glass-panel" style={{ flex: 1, textAlign: 'center' }}>
-                <p className="text-muted text-sm" style={{ color: 'var(--danger)' }}>Erros</p>
-                <h2 style={{ fontSize: '32px', margin: '8px 0 0 0', color: 'var(--danger)' }}>{summary.error}</h2>
-              </div>
-            </div>
-
-            {(gdriveInfo.sheetId || gdriveInfo.folderId) && (
-              <div className="glass-panel" style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left', padding: '20px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)' }}>
-                  <CheckCircle2 size={18} /> Arquivo e Planilha Sincronizados com o Google Drive:
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                  {gdriveInfo.sheetId && (
-                    <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                        <FileText size={22} color="#10B981" style={{ flexShrink: 0 }} />
-                        <div style={{ overflow: 'hidden' }}>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ID da Planilha (Lista_{selectedSession}):</div>
-                          <div style={{ fontSize: '13px', fontWeight: '500', color: 'white', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveInfo.sheetId}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        <button 
-                          type="button"
-                          onClick={() => { navigator.clipboard.writeText(gdriveInfo.sheetId); setCopiedField('sheet'); setTimeout(() => setCopiedField(''), 2000); }}
-                          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'white', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          title="Copiar SheetID"
-                        >
-                          {copiedField === 'sheet' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />} Copiar ID
-                        </button>
-                        <a 
-                          href={`https://docs.google.com/spreadsheets/d/${gdriveInfo.sheetId}`} 
-                          target="_blank" rel="noreferrer"
-                          style={{ background: 'var(--primary)', textDecoration: 'none', borderRadius: '6px', padding: '6px 12px', color: 'white', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}
-                        >
-                          <ExternalLink size={14} /> Abrir
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {gdriveInfo.folderId && (
-                    <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                        <Folder size={22} color="#F59E0B" style={{ flexShrink: 0 }} />
-                        <div style={{ overflow: 'hidden' }}>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ID da Pasta (PAGAMENTOS):</div>
-                          <div style={{ fontSize: '13px', fontWeight: '500', color: 'white', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveInfo.folderId}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        <button 
-                          type="button"
-                          onClick={() => { navigator.clipboard.writeText(gdriveInfo.folderId); setCopiedField('folder'); setTimeout(() => setCopiedField(''), 2000); }}
-                          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'white', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          title="Copiar FolderID"
-                        >
-                          {copiedField === 'folder' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />} Copiar ID
-                        </button>
-                        <a 
-                          href={`https://drive.google.com/drive/folders/${gdriveInfo.folderId}`} 
-                          target="_blank" rel="noreferrer"
-                          style={{ background: 'var(--primary)', textDecoration: 'none', borderRadius: '6px', padding: '6px 12px', color: 'white', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}
-                        >
-                          <ExternalLink size={14} /> Abrir
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* O Resumo Compacto anterior foi movido para ícones ao lado do dropdown! */}
 
             <div className="glass-panel" style={{ marginBottom: '24px' }}>
               <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Código</th>
-                      <th style={{ padding: '12px' }}>ID Code</th>
-                      <th style={{ padding: '12px' }}>Nome</th>
-                      <th style={{ padding: '12px' }}>Telefone</th>
-                      <th style={{ padding: '12px' }}>Normal</th>
-                      <th style={{ padding: '12px' }}>Levantamento</th>
-                      <th style={{ padding: '12px' }}>Erro</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Código</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>ID Code</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Nome</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Telefone</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Normal</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Levantamento</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Erro</th>
                     </tr>
                   </thead>
                   <tbody>
                     {historyData.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '12px' }}>{item.list_code}</td>
-                        <td style={{ padding: '12px' }}>{item.id_code}</td>
-                        <td style={{ padding: '12px' }}>{item.name}</td>
-                        <td style={{ padding: '12px' }}>{item.phone}</td>
-                        <td style={{ padding: '12px' }}>
+                        <td style={{ padding: '4px 10px' }}>{item.list_code}</td>
+                        <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
+                        <td style={{ padding: '4px 10px' }}>{item.name}</td>
+                        <td style={{ padding: '4px 10px' }}>{item.phone}</td>
+                        <td style={{ padding: '4px 10px' }}>
                           <span style={{ 
-                            padding: '4px 8px', 
+                            padding: '2px 6px', 
                             borderRadius: '4px', 
                             background: item.status === 'Pendente' ? 'rgba(255,255,255,0.1)' : (item.status && item.status.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
                             color: item.status === 'Pendente' ? 'var(--text-main)' : (item.status && item.status.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
@@ -870,9 +858,9 @@ export default function Dashboard() {
                             {item.status || 'Pendente'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px' }}>
+                        <td style={{ padding: '4px 10px' }}>
                           <span style={{ 
-                            padding: '4px 8px', 
+                            padding: '2px 6px', 
                             borderRadius: '4px', 
                             background: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'rgba(255,255,255,0.1)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
                             color: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--text-main)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
@@ -880,7 +868,7 @@ export default function Dashboard() {
                             {item.status_levantamento || 'Pendente'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px', color: 'var(--danger)', fontSize: '12px' }}>
+                        <td style={{ padding: '4px 10px', color: 'var(--danger)', fontSize: '11px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.error ? `Normal: ${item.error}` : ''}
                           {item.error && item.error_levantamento ? ' | ' : ''}
                           {item.error_levantamento ? `Levantamento: ${item.error_levantamento}` : ''}
@@ -891,33 +879,6 @@ export default function Dashboard() {
                 </table>
               </div>
             </div>
-
-            <div className="flex-row gap-4" style={{ flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                onClick={() => window.location.href = `${API_BASE}/download/csv/${selectedSession}`}
-                className="btn btn-primary" 
-                style={{ flex: 1, minWidth: '200px', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' }}
-              >
-                <Database size={18} /> Baixar Relatório (CSV)
-              </button>
-              <button 
-                type="button"
-                onClick={() => window.location.href = `${API_BASE}/download/zip/${selectedSession}`}
-                className="btn" 
-                style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.1)', color: 'white', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' }}
-              >
-                <DownloadCloud size={18} /> Baixar ZIP ({selectedSession}.zip)
-              </button>
-              <button 
-                type="button"
-                onClick={deleteSession}
-                className="btn" 
-                style={{ background: 'rgba(239, 68, 68, 0.2)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.5)', display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' }}
-              >
-                <Trash2 size={18} /> Apagar Sessão
-              </button>
-            </div>
           </div>
         ) : selectedSession && historyData.length === 0 ? (
           <div className="glass-panel text-center py-8">
@@ -926,6 +887,7 @@ export default function Dashboard() {
         ) : null}
       </div>
       )}
+      </div>
     </div>
   );
 }

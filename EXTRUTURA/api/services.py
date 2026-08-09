@@ -18,15 +18,40 @@ from core.data_processor import process_and_clean_data, export_with_formatting, 
 from core.media_generator import generate_html_table, get_message_template
 from core.database import save_session, save_setting, get_setting
 from core.logger import get_logger
+from api.google_drive import get_gdrive_service, create_folder, upload_file, create_local_gsheet_shortcut, upload_folder_recursive
 
 hti = Html2Image(custom_flags=['--no-sandbox', '--disable-setuid-sandbox', '--headless', '--disable-gpu', '--disable-dbus', '--disable-dev-shm-usage', '--log-level=3', '--silent'])
 
+
 async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback, send_whatsapp=False):
+    loop = asyncio.get_running_loop()
+
+    def sync_progress(prog, tot, msg, extra=None):
+        asyncio.run_coroutine_threadsafe(
+            progress_callback(prog, tot, msg, extra=extra),
+            loop
+        )
+
+    await asyncio.to_thread(
+        _process_excel_sync,
+        df, id_ctr, origin_sel, dest_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, sync_progress
+    )
+
+    if send_whatsapp:
+        await progress_callback(99, 100, "A iniciar envio de WhatsApp em segundo plano...")
+        from api.main import start_sending
+        asyncio.create_task(start_sending(id_ctr=id_ctr, send_mode="normal"))
+        
+    sheet_id_res = get_setting(f"gdrive_sheet_id_{id_ctr}", "")
+    folder_id_res = get_setting(f"gdrive_folder_id_{id_ctr}", "")
+    await progress_callback(100, 100, "Concluído!", extra={"sheetId": sheet_id_res, "folderId": folder_id_res})
+
+def _process_excel_sync(df, id_ctr, origin_sel, dest_sel, loading_date, expected_date, payment_deadline, dist_mode, filipe_target, progress_callback):
     try:
         get_logger("BackgroundProcessor").info(f"Iniciando processamento background para {id_ctr}")
         save_setting(f"proc_status_{id_ctr}", "running")
         
-        await progress_callback(5, 100, "Limpando e formatando dados...")
+        progress_callback(5, 100, "Limpando e formatando dados...")
         
         if 'USERNAME' in df.columns:
             df = df.drop('USERNAME', axis=1)
@@ -70,7 +95,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
         
         df_submitted = df.drop(columns=['TOTAL_AMOUNT'], errors='ignore')
         
-        await progress_callback(15, 100, "Gerando distribuição de valores...")
+        progress_callback(15, 100, "Gerando distribuição de valores...")
         
         column_mapping = {
             "NO": "LIST_CODE",
@@ -134,7 +159,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                     
         df_export['BANK_IN'] = df_export['ID_CODE'].apply(lambda x: "FILIPE" if x in selected_ids else "JUPITER")
         
-        await progress_callback(25, 100, "A preparar ficheiros em disco...")
+        progress_callback(25, 100, "A preparar ficheiros em disco...")
         
         db_root = "db"
         id_ctr_root = os.path.join(db_root, id_ctr)
@@ -267,7 +292,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
                 unique_entries.append(entry_key)
                 
         total_clients = len(unique_entries)
-        await progress_callback(30, 100, f"Gerando imagens para {total_clients} clientes...")
+        progress_callback(30, 100, f"Gerando imagens para {total_clients} clientes...")
         
         all_export_records = df_export.to_dict(orient='records')
         for idx, (target_list_code, target_id_code) in enumerate(unique_entries):
@@ -321,7 +346,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
             hti.output_path = info_dir
             
             # Executar html2image de forma sincrona mas evitar travar o event loop
-            await asyncio.to_thread(hti.screenshot, html_str=html_table, save_as=img_filename, size=(1200, 2000))
+            hti.screenshot(html_str=html_table, save_as=img_filename, size=(1200, 2000))
             
             img_path = os.path.join(info_dir, img_filename)
             try:
@@ -367,7 +392,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
             })
             
             percent = 30 + int(70 * (idx + 1) / total_clients)
-            await progress_callback(percent, 100, f"Processado {idx + 1} de {total_clients}: {name}")
+            progress_callback(percent, 100, f"Processado {idx + 1} de {total_clients}: {name}")
             
         save_session(id_ctr, queue)
         
@@ -375,7 +400,7 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
         from api.google_drive import get_gdrive_service, create_folder, upload_file, create_local_gsheet_shortcut, upload_folder_recursive
         gdrive_service, gdrive_email = get_gdrive_service()
         if gdrive_service:
-            await progress_callback(95, 100, "A sincronizar pasta com o Google Drive...")
+            progress_callback(95, 100, "A sincronizar pasta com o Google Drive...")
             try:
                 maputo_folder_id = "1KVePfb9KU4nKMIj-w9hta_iQ0euIJO5J"
                 nacala_folder_id = "1KYlkMqXQaC25hxy4IaycI4HfvpQf2VAV"
@@ -424,16 +449,9 @@ async def process_excel_bg(df, id_ctr, origin_sel, dest_sel, loading_date, expec
         save_setting(f"proc_status_{id_ctr}", "completed")
         get_logger("BackgroundProcessor").info(f"Processamento concluído com sucesso para {id_ctr}")
         
-        if send_whatsapp:
-            await progress_callback(99, 100, "A iniciar envio de WhatsApp em segundo plano...")
-            from api.main import start_sending
-            asyncio.create_task(start_sending(id_ctr=id_ctr, send_mode="normal"))
 
-        sheet_id_res = get_setting(f"gdrive_sheet_id_{id_ctr}", "")
-        folder_id_res = get_setting(f"gdrive_folder_id_{id_ctr}", "")
-        await progress_callback(100, 100, "Concluído!", extra={"sheetId": sheet_id_res, "folderId": folder_id_res})
         
     except Exception as e:
         save_setting(f"proc_status_{id_ctr}", f"error: {e}")
         get_logger("BackgroundProcessor").error(f"Erro no processamento background de {id_ctr}: {e}")
-        await progress_callback(100, 100, f"Erro: {str(e)}")
+        progress_callback(100, 100, f"Erro: {str(e)}")

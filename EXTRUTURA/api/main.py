@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
@@ -23,10 +23,20 @@ from core.database import (
 )
 from core.whatsapp import send_whatchimp_template, upload_whatchimp_media, extract_phone_numbers
 from core.queue_manager import queue_manager
+from core.subscription import SubscriptionManager
 import uuid
 import time
 
 app = FastAPI(title="Processador CTR API")
+
+class SubscriptionActivation(BaseModel):
+    subscription_id: str
+
+def require_subscription():
+    sub = SubscriptionManager.check_subscription()
+    if not sub.get("is_active"):
+        raise HTTPException(status_code=402, detail=sub.get("message", "Subscrição inativa."))
+    return sub
 
 app.add_middleware(
     CORSMiddleware,
@@ -84,6 +94,16 @@ async def login(username: str = Form(...), password: str = Form(...)):
             return {"success": True, "token": data.get('token'), "user": data.get('record')}
         else:
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    except requests.exceptions.RequestException as re:
+        # Fallback de emergência (se o Pocketbase estiver offline)
+        print(f"Aviso: Erro de conexão ao Pocketbase ({str(re)}). A usar fallback local.")
+        if username == "admin@admin.com" and password == "123456":
+            return {
+                "success": True, 
+                "token": "local-fallback-token", 
+                "user": {"id": "local", "email": "admin@admin.com", "name": "Admin Local"}
+            }
+        raise HTTPException(status_code=503, detail="Servidor de autenticação indisponível e as credenciais locais falharam.")
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -111,7 +131,7 @@ def read_excel_smart(content: bytes) -> pd.DataFrame:
     bio.seek(0)
     return pd.read_excel(bio, skiprows=3)
 
-@app.post("/upload")
+@app.post("/upload", dependencies=[Depends(require_subscription)])
 async def upload_file(
     file: UploadFile = File(...),
     id_ctr: str = Form(...),
@@ -243,10 +263,13 @@ def get_settings():
     return res
 
 @app.get("/google/auth-url")
-def google_auth_url():
+def google_auth_url(request: Request):
     try:
         from api.google_drive import get_google_flow
-        flow = get_google_flow()
+        origin = request.headers.get("origin") or request.headers.get("referer", "").rstrip("/")
+        redirect_uri = f"{origin}/api/google/auth/callback" if origin else None
+        
+        flow = get_google_flow(redirect_uri)
         if not flow:
             return {"success": False, "message": "Credenciais do Google não encontradas! Configura as variáveis GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas Variáveis de Ambiente do Backend no Coolify."}
         
@@ -259,15 +282,30 @@ def google_auth_url():
     except Exception as e:
         return {"success": False, "message": str(e)}
 
+@app.get("/subscription/status")
+def get_subscription_status():
+    return SubscriptionManager.check_subscription(force_refresh=False)
+
+@app.post("/subscription/activate")
+def activate_subscription(data: SubscriptionActivation):
+    return SubscriptionManager.activate_subscription(data.subscription_id)
+
+@app.post("/subscription/clear")
+def clear_subscription():
+    return SubscriptionManager.clear_subscription()
+
 class GoogleCallbackRequest(BaseModel):
     code: str
     code_verifier: str = None
 
 @app.post("/google/callback")
-def google_callback(req: GoogleCallbackRequest):
+def google_callback(req: GoogleCallbackRequest, request: Request):
     try:
         from api.google_drive import get_google_flow
-        flow = get_google_flow()
+        origin = request.headers.get("origin") or request.headers.get("referer", "").rstrip("/")
+        redirect_uri = f"{origin}/api/google/auth/callback" if origin else None
+        
+        flow = get_google_flow(redirect_uri)
         if not flow:
             raise HTTPException(status_code=400, detail="Flow não configurado")
             
@@ -335,7 +373,7 @@ async def reset_system(req: ResetRequest):
             raise HTTPException(status_code=500, detail=str(e))
     raise HTTPException(status_code=401, detail="Código incorreto")
 
-@app.post("/send")
+@app.post("/send", dependencies=[Depends(require_subscription)])
 async def start_sending(
     id_ctr: str = Form(...),
     send_mode: str = Form(...),
@@ -379,7 +417,7 @@ async def get_send_queue_status():
     jobs = get_all_sending_jobs()
     return {"success": True, "jobs": jobs}
 
-@app.post("/send-queue/add")
+@app.post("/send-queue/add", dependencies=[Depends(require_subscription)])
 async def add_send_queue_job(
     id_ctr: str = Form(...),
     send_mode: str = Form(...),

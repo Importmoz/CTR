@@ -6,7 +6,8 @@ import SendPanel from './pages/SendPanel';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import GoogleCallback from './pages/GoogleCallback';
-import { LayoutDashboard, Send, History as HistoryIcon, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import BillingGuard from './components/BillingGuard';
+import { LayoutDashboard, Send, History as HistoryIcon, Settings as SettingsIcon, LogOut, MessageCircle, Wrench } from 'lucide-react';
 
 function ProtectedLayout({ children, setAuth }) {
   const location = useLocation();
@@ -40,12 +41,12 @@ function ProtectedLayout({ children, setAuth }) {
   };
 
   return (
-    <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-dark)' }}>
-      <nav style={{ 
+    <BillingGuard>
+      <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-dark)' }}>
+      <nav className="top-nav" style={{ 
         background: 'rgba(15, 23, 42, 0.8)', 
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid rgba(255,255,255,0.05)', 
-        padding: '12px 32px', 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
@@ -66,10 +67,24 @@ function ProtectedLayout({ children, setAuth }) {
           gap: '8px',
           letterSpacing: '-0.5px'
         }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px' }}>
-            ⚡
+          <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+            <MessageCircle size={18} strokeWidth={2.5} />
+            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-dark)', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#3b82f6', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Wrench size={10} strokeWidth={3} color="white" />
+              </div>
+            </div>
           </div>
-          CTR_WEB
+          <span style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: '900',
+            letterSpacing: '-0.5px',
+            paddingRight: '4px'
+          }}>
+            Whatss
+          </span>
         </div>
         
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
@@ -111,10 +126,11 @@ function ProtectedLayout({ children, setAuth }) {
           </button>
         </div>
       </nav>
-      <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+      <main className="main-content" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
       </main>
-    </div>
+      </div>
+    </BillingGuard>
   );
 }
 

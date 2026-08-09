@@ -31,6 +31,13 @@ export default function SendPanel() {
     return () => clearInterval(interval);
   }, []);
 
+  // Guarda os dados de levantamento sempre que são alterados
+  useEffect(() => {
+    if (selectedSession) {
+      localStorage.setItem(`levantamento_${selectedSession}`, JSON.stringify(levantamentoData));
+    }
+  }, [selectedSession, levantamentoData]);
+
   const fetchSendingQueue = async () => {
     try {
       const res = await fetch(`${API_BASE}/send-queue/status`);
@@ -114,6 +121,20 @@ export default function SendPanel() {
   const loadSession = async (id_ctr, silent = false) => {
     if (!silent) setLoading(true);
     setSelectedSession(id_ctr);
+    
+    try {
+      const saved = localStorage.getItem(`levantamento_${id_ctr}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setLevantamentoData({
+          data_disp: parsed.data_disp ? new Date(parsed.data_disp) : new Date(),
+          time_start: parsed.time_start ? new Date(parsed.time_start) : setHours(setMinutes(new Date(), 0), 9),
+          time_end: parsed.time_end ? new Date(parsed.time_end) : setHours(setMinutes(new Date(), 0), 15),
+          valor_taxa_disp: parsed.valor_taxa_disp || ''
+        });
+      }
+    } catch(e) {}
+
     try {
       const res = await fetch(`${API_BASE}/sessions/${id_ctr}`);
       const data = await res.json();
@@ -215,14 +236,14 @@ export default function SendPanel() {
   };
 
   return (
-    <div className="container animate-fade-in">
-      <h2>Painel de Envio</h2>
-      <p className="text-muted" style={{ marginBottom: '24px' }}>Controle os envios de WhatsApp para a sua remessa.</p>
+    <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      <h2 style={{ flexShrink: 0 }}>Painel de Envio</h2>
+      <p className="text-muted" style={{ marginBottom: '24px', flexShrink: 0 }}>Controle os envios de WhatsApp para a sua remessa.</p>
 
-      <div className="flex-row gap-6">
-        <div className="glass-panel" style={{ flex: '1', minWidth: '250px', alignSelf: 'flex-start' }}>
-          <h3>Sessões Gravadas</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 50px)', gap: '8px', marginTop: '16px' }}>
+      <div className="flex-row gap-6" style={{ flex: 1, overflow: 'hidden' }}>
+        <div className="glass-panel" style={{ flex: '1', minWidth: '250px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 'fit-content', maxHeight: '100%' }}>
+          <h3 style={{ flexShrink: 0 }}>Sessões Gravadas</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 50px)', alignContent: 'start', gap: '8px', marginTop: '16px', overflowY: 'auto' }}>
             {sessions.length === 0? (
               <p className="text-muted text-sm">Sem sessões ativas.</p>
             ) : (
@@ -240,14 +261,14 @@ export default function SendPanel() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ flex: '3', minWidth: '400px' }}>
+        <div className="glass-panel" style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 'fit-content', maxHeight: '100%' }}>
           {loading? (
-            <div className="flex-col items-center justify-center py-8">
+            <div className="flex-col items-center justify-center py-8" style={{ flex: 1 }}>
               <div className="spinner"></div>
               <p className="mt-4 text-muted">A carregar...</p>
             </div>
           ) : queue.length > 0? (
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
               <div className="flex-row justify-between items-center flex-wrap gap-4" style={{ marginBottom: '24px' }}>
                 <h3>Mensagens ({queue.length})</h3>
                 <div className="flex-row gap-4 items-center">
@@ -256,7 +277,7 @@ export default function SendPanel() {
                     <div style={{ position: 'relative' }}>
                       <div 
                         className="input-wrapper" 
-                        style={{ width: '130px', cursor: 'pointer', justifyContent: 'space-between', padding: '8px' }}
+                        style={{ width: '160px', cursor: 'pointer', justifyContent: 'space-between', padding: '8px 12px' }}
                         onClick={() => setIsModeOpen(!isModeOpen)}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -376,14 +397,14 @@ export default function SendPanel() {
                 </div>
               )}
 
-              <div style={{ overflowX: 'auto', maxHeight: '500px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                      <th style={{ padding: '12px' }}>Código</th>
-                      <th style={{ padding: '12px' }}>Nome</th>
-                      <th style={{ padding: '12px' }}>Telefone</th>
-                      <th style={{ padding: '12px' }}>Estado</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Código</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Nome</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Telefone</th>
+                      <th style={{ padding: '6px 10px', fontWeight: '500' }}>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -392,12 +413,12 @@ export default function SendPanel() {
                     const currentError = sendMode === 'levantamento' ? (item.error_levantamento || '') : (item.error || '');
                     return (
                     <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '12px' }}>{item.id_code}</td>
-                      <td style={{ padding: '12px' }}>{item.name}</td>
-                      <td style={{ padding: '12px' }}>{item.phone}</td>
-                      <td style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                      <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
+                      <td style={{ padding: '4px 10px' }}>{item.name}</td>
+                      <td style={{ padding: '4px 10px' }}>{item.phone}</td>
+                      <td style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                         <span style={{
-                          padding: '4px 8px',
+                          padding: '2px 6px',
                           borderRadius: '4px',
                           background: currentStatus === 'Pendente'? 'rgba(255,255,255,0.1)' : currentStatus.includes('Erro')? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
                           color: currentStatus === 'Pendente'? 'var(--text-main)' : currentStatus.includes('Erro')? 'var(--danger)' : 'var(--success)'
@@ -414,9 +435,9 @@ export default function SendPanel() {
                               background: 'rgba(59, 130, 246, 0.15)',
                               border: '1px solid rgba(59, 130, 246, 0.4)',
                               color: '#60A5FA',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
                               fontWeight: '600',
                               display: 'inline-flex',
                               alignItems: 'center',

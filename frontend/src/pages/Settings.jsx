@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle } from 'lucide-react';
+import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle, CreditCard, Calendar, User, Zap, Settings as SettingsIcon } from 'lucide-react';
 import { API_BASE } from '../config/api';
 
 export default function Settings() {
@@ -18,9 +18,12 @@ export default function Settings() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
   const [editableFields, setEditableFields] = useState({});
+  const [subStatus, setSubStatus] = useState(null);
+  const [activeTab, setActiveTab] = useState('geral');
 
   useEffect(() => {
     fetchSettings();
+    fetchSubscription();
   }, []);
 
   const fetchSettings = async () => {
@@ -29,6 +32,18 @@ export default function Settings() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/subscription/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setSubStatus(data);
       }
     } catch (err) {
       console.error(err);
@@ -78,7 +93,7 @@ export default function Settings() {
   };
 
   const renderInput = (key, label, placeholder) => (
-    <div style={{ flex: '1 1 calc(50% - 16px)', minWidth: '250px' }}>
+    <div style={{ width: '100%' }}>
       <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
         <span>{label}</span>
         <Edit3 size={14} style={{ opacity: editableFields[key] ? 1 : 0.4 }} />
@@ -100,7 +115,7 @@ export default function Settings() {
   );
 
   return (
-    <div className="container animate-fade-in" style={{ paddingBottom: '80px' }}>
+    <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
           <h2 style={{ background: 'linear-gradient(90deg, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -133,10 +148,37 @@ export default function Settings() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* Tabs Navigation */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+        {[
+          { id: 'geral', label: 'Geral', icon: <MessageSquare size={16} /> },
+          { id: 'integracoes', label: 'Integrações', icon: <Save size={16} /> },
+          { id: 'subscricao', label: 'Subscrição', icon: <CreditCard size={16} /> },
+          { id: 'avancado', label: 'Avançado', icon: <SettingsIcon size={16} /> }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: '500',
+              background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
+              color: activeTab === tab.id ? '#fff' : 'var(--text-muted)',
+              border: 'none', cursor: 'pointer', transition: 'all 0.3s',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', overflowY: 'auto', flex: 1, minHeight: 0, paddingBottom: '40px' }}>
         
-        {/* Templates Section */}
-        <div className="glass-panel" style={{ padding: '32px' }}>
+        {/* Templates Section - Geral Tab */}
+        {activeTab === 'geral' && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
             <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '10px', borderRadius: '12px' }}>
               <MessageSquare size={24} color="#60a5fa" />
@@ -147,57 +189,59 @@ export default function Settings() {
             </div>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px' }}>
             
             {/* Cargas */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                <Truck size={16} /> Cargas
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Truck size={14} /> Cargas
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {renderInput('template_alerta_carga_pagar', 'Alerta Carga a Pagar', '409806')}
-                {renderInput('template_alerta_carga_pago', 'Alerta Carga Paga', '409807')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {renderInput('template_alerta_carga_pagar', 'Alerta a Pagar', '409806')}
+                {renderInput('template_alerta_carga_pago', 'Alerta Pago', '409807')}
               </div>
             </div>
 
             {/* Regras */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                <BookOpen size={16} /> Notas e Regras
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <BookOpen size={14} /> Regras
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {renderInput('template_notas_regras_pagamento', 'Regras Pagamento', '409373')}
                 {renderInput('template_notas_regras_pago', 'Regras Pago', '409400')}
               </div>
             </div>
 
             {/* Bancos */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                <Building2 size={16} /> Bancos
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Building2 size={14} /> Bancos
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {renderInput('template_banco_jupiter', 'Banco Jupiter', '409374')}
                 {renderInput('template_banco_filipe', 'Banco Filipe', '409375')}
               </div>
             </div>
 
             {/* Levantamentos */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                <Banknote size={16} /> Levantamentos
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <Banknote size={14} /> Levantamentos
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {renderInput('template_levantamento', 'Levantamento Base', '412705')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {renderInput('template_levantamento', 'Levantamento', '412705')}
                 {renderInput('template_levantamento_nota', 'Levantamento Nota', '412707')}
               </div>
             </div>
             
           </div>
         </div>
+        )}
 
-        {/* Integração Google Drive */}
-        <div className="glass-panel" style={{ padding: '32px' }}>
+        {/* Integração Google Drive - Integrações Tab */}
+        {activeTab === 'integracoes' && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '10px', borderRadius: '12px' }}>
               <Save size={24} color="#34d399" />
@@ -263,15 +307,65 @@ export default function Settings() {
             )}
           </div>
         </div>
+        )}
 
-        {/* Danger Zone */}
-        <div className="glass-panel" style={{ 
-          border: '1px solid rgba(239, 68, 68, 0.4)', 
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(30, 41, 59, 0.7) 100%)',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'all 0.3s'
-        }}
+        {/* Informações da Subscrição - Subscricao Tab */}
+        {activeTab === 'subscricao' && subStatus && subStatus.details && (
+          <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+              <div style={{ background: 'rgba(167, 139, 250, 0.2)', padding: '10px', borderRadius: '12px' }}>
+                <CreditCard size={24} color="#a78bfa" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Dados da Subscrição</h3>
+                <p className="text-muted" style={{ margin: 0, fontSize: '13px', marginTop: '2px' }}>Informações sobre o seu plano e licença ativos.</p>
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+                <Zap size={24} color="var(--primary)" opacity={0.7} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Plano Atual</p>
+                  <h4 style={{ margin: '4px 0 0 0', fontSize: '16px' }}>{subStatus?.details?.plan_name || 'Desconhecido'}</h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--success)' }}>
+                    ${parseFloat(subStatus?.details?.price || 0).toFixed(2)} {subStatus?.details?.currency || 'USD'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+                <User size={24} color="var(--primary)" opacity={0.7} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Titular</p>
+                  <h4 style={{ margin: '4px 0 0 0', fontSize: '16px' }}>{subStatus?.details?.customer_name || 'N/A'}</h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{subStatus?.details?.customer_email || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+                <Calendar size={24} color="var(--primary)" opacity={0.7} />
+                <div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próxima Renovação</p>
+                  <h4 style={{ margin: '4px 0 0 0', fontSize: '16px' }}>
+                    {subStatus?.details?.current_period_end ? new Date(subStatus.details.current_period_end).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>Status: <span style={{ color: subStatus?.is_active ? 'var(--success)' : 'var(--danger)' }}>{String(subStatus?.status || 'desconhecido').toUpperCase()}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Danger Zone - Avancado Tab */}
+        {activeTab === 'avancado' && (
+          <div className="glass-panel animate-fade-in" style={{ 
+            border: '1px solid rgba(239, 68, 68, 0.4)', 
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(30, 41, 59, 0.7) 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.3s'
+          }}
         onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.2)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.8)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.3)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.4)'; }}
         >
@@ -332,6 +426,7 @@ export default function Settings() {
             </button>
           </form>
         </div>
+        )}
       </div>
     </div>
   );
