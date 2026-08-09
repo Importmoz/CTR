@@ -263,12 +263,12 @@ export default function Dashboard() {
           {/* Toggle Switch Buttons */}
           <div style={{
             display: 'flex',
-            background: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            background: 'var(--panel-bg-solid)',
+            border: '1px solid var(--glass-border)',
             borderRadius: '12px',
             padding: '4px',
             gap: '4px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+            boxShadow: '0 4px 12px var(--shadow-color)'
           }}>
             <button
               type="button"
@@ -345,10 +345,10 @@ export default function Dashboard() {
             onDrop={handleDrop}
             style={{
               border: '2px dashed var(--border-color)',
-              borderRadius: '12px',
+              borderRadius: '16px',
               textAlign: 'center',
-              cursor: 'pointer',
-              background: 'rgba(15, 23, 42, 0.4)',
+              height: '100%',
+              background: 'var(--glass-bg-hover)',
               transition: 'all 0.2s ease',
               flex: 1,
               display: 'flex',
@@ -399,13 +399,13 @@ export default function Dashboard() {
                 {isOriginOpen && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, width: '100%', marginTop: '4px',
-                    background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)',
+                    background: 'var(--panel-bg-solid)', border: '1px solid var(--border-color)',
                     borderRadius: '12px', overflow: 'hidden', zIndex: 50,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 6px -1px var(--shadow-color)'
                   }}>
                     {['CHINA', 'DUBAI'].map(opt => (
                       <div key={opt} className="dropdown-item"
-                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.origin_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.origin_sel === opt ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.origin_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.origin_sel === opt ? 'var(--glass-bg-hover)' : 'transparent' }}
                         onClick={() => { setFormData({...formData, origin_sel: opt}); setIsOriginOpen(false); }}
                       >
                         {opt}
@@ -430,13 +430,13 @@ export default function Dashboard() {
                 {isDestOpen && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, width: '100%', marginTop: '4px',
-                    background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)',
+                    background: 'var(--panel-bg-solid)', border: '1px solid var(--border-color)',
                     borderRadius: '12px', overflow: 'hidden', zIndex: 50,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 6px -1px var(--shadow-color)'
                   }}>
                     {['MAPUTO', 'NACALA'].map(opt => (
                       <div key={opt} className="dropdown-item"
-                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.dest_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.dest_sel === opt ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.dest_sel === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.dest_sel === opt ? 'var(--glass-bg-hover)' : 'transparent' }}
                         onClick={() => { setFormData({...formData, dest_sel: opt}); setIsDestOpen(false); }}
                       >
                         {opt}
@@ -506,13 +506,13 @@ export default function Dashboard() {
                 {isDistModeOpen && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, width: '100%', marginTop: '4px',
-                    background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)',
+                    background: 'var(--panel-bg-solid)', border: '1px solid var(--border-color)',
                     borderRadius: '12px', overflow: 'hidden', zIndex: 50,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 6px -1px var(--shadow-color)'
                   }}>
                     {['Padrão', 'FILIPE', 'JUPITER', 'Meta FILIPE'].map(opt => (
                       <div key={opt} className="dropdown-item"
-                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.dist_mode === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.dist_mode === opt ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                        style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: formData.dist_mode === opt ? 'var(--primary)' : 'var(--text-main)', background: formData.dist_mode === opt ? 'var(--glass-bg-hover)' : 'transparent' }}
                         onClick={() => { setFormData({...formData, dist_mode: opt}); setIsDistModeOpen(false); }}
                       >
                         {opt}
@@ -531,8 +531,8 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'transparent', userSelect: 'none' }}>-</label>
                 <div 
-                  className="input-wrapper" 
-                  style={{ cursor: 'pointer', padding: '8px 12px', background: formData.send_whatsapp ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)', borderColor: formData.send_whatsapp ? 'var(--success)' : 'var(--border-color)', transition: 'all 0.2s', width: '125px' }}
+                  className={`input-wrapper ${formData.send_whatsapp ? 'active' : ''}`}
+                  style={{ cursor: 'pointer', padding: '8px 12px', background: formData.send_whatsapp ? 'var(--success-bg)' : 'var(--glass-bg-subtle)', borderColor: formData.send_whatsapp ? 'var(--success)' : 'var(--border-color)', transition: 'all 0.2s', width: '125px' }}
                   onClick={() => setFormData({...formData, send_whatsapp: !formData.send_whatsapp})}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -585,9 +585,9 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {conversionQueue.map((job) => (
               <div key={job.job_id} style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                background: 'var(--glass-bg-subtle)',
+                border: '1px solid var(--glass-border)',
+                boxShadow: '0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color)',
                 borderRadius: '8px',
                 padding: '8px 12px',
                 display: 'flex',
@@ -611,7 +611,7 @@ export default function Dashboard() {
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.message}</span>
                     {job.status === 'completed' && <span style={{ color: '#10B981', flexShrink: 0, marginLeft: '8px' }}>Sincronizado!</span>}
                   </div>
-                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'var(--glass-bg-subtle)' }}>
                     <div className="progress-bar" style={{
                       width: `${job.progress || 0}%`,
                       background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--primary)'
@@ -652,7 +652,7 @@ export default function Dashboard() {
             </div>
             <div className="flex-row items-center gap-4">
               {status === 'completed' && (
-                <button onClick={downloadZip} className="btn" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button onClick={downloadZip} className="btn" style={{ background: 'var(--glass-bg-hover)', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <DownloadCloud size={16} /> Baixar ZIP
                 </button>
               )}
@@ -666,25 +666,25 @@ export default function Dashboard() {
           <p className="text-muted" style={{ marginTop: '12px', fontSize: '14px' }}>{progress.message}</p>
 
           {status === 'completed' && (gdriveData.sheetId || gdriveData.folderId) && (
-            <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+            <div style={{ marginTop: '20px', padding: '16px', background: 'var(--glass-bg-subtle)', border: '1px solid var(--glass-border)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
               <h4 style={{ margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)' }}>
                 <CheckCircle2 size={18} /> Sincronizado com Google Drive:
               </h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                 {gdriveData.sheetId && (
-                  <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'var(--panel-bg-translucent)', borderRadius: '8px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
                       <FileText size={22} color="#10B981" style={{ flexShrink: 0 }} />
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ID da Planilha (Lista_{formData.id_ctr}):</div>
-                        <div style={{ fontSize: '13px', fontWeight: '500', color: 'white', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveData.sheetId}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveData.sheetId}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button 
                         type="button"
                         onClick={() => { navigator.clipboard.writeText(gdriveData.sheetId); setCopiedField('sheet'); setTimeout(() => setCopiedField(''), 2000); }}
-                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'white', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'var(--glass-bg-hover)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'var(--text-main)', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         title="Copiar SheetID"
                       >
                         {copiedField === 'sheet' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />} Copiar ID
@@ -700,19 +700,19 @@ export default function Dashboard() {
                   </div>
                 )}
                 {gdriveData.folderId && (
-                  <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ flex: 1, minWidth: '280px', padding: '12px', background: 'var(--panel-bg-translucent)', borderRadius: '8px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
                       <Folder size={22} color="#F59E0B" style={{ flexShrink: 0 }} />
                       <div style={{ overflow: 'hidden' }}>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ID da Pasta (PAGAMENTOS):</div>
-                        <div style={{ fontSize: '13px', fontWeight: '500', color: 'white', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveData.folderId}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{gdriveData.folderId}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button 
                         type="button"
                         onClick={() => { navigator.clipboard.writeText(gdriveData.folderId); setCopiedField('folder'); setTimeout(() => setCopiedField(''), 2000); }}
-                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'white', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'var(--glass-bg-hover)', border: 'none', borderRadius: '6px', padding: '6px 10px', color: 'var(--text-main)', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         title="Copiar FolderID"
                       >
                         {copiedField === 'folder' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />} Copiar ID
@@ -734,8 +734,7 @@ export default function Dashboard() {
       )}
       </div>
       ) : (
-
-      <div className="animate-fade-in">
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
             <div 
@@ -747,7 +746,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <List size={18} color="var(--primary)" />
-                  <span style={{ fontSize: '14px', fontWeight: selectedSession ? '600' : '400', color: selectedSession ? 'white' : 'var(--text-main)' }}>
+                  <span style={{ fontSize: '14px', fontWeight: selectedSession ? '600' : '400', color: selectedSession ? 'var(--primary)' : 'var(--text-main)' }}>
                     {selectedSession ? selectedSession : (sessions.length > 0 ? 'A carregar...' : 'Nenhum projeto salvo')}
                   </span>
                 </div>
@@ -760,18 +759,18 @@ export default function Dashboard() {
             {isDropdownOpen && (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, minWidth: '240px', marginTop: '4px',
-                background: 'rgba(15, 23, 42, 0.98)', border: '1px solid var(--border-color)',
+                background: 'var(--panel-bg-solid)', border: '1px solid var(--border-color)',
                 borderRadius: '12px', zIndex: 50, padding: '8px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)', maxHeight: '300px', overflowY: 'auto',
+                boxShadow: '0 8px 24px var(--shadow-color)', maxHeight: '300px', overflowY: 'auto',
                 display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '6px'
               }}>
                 {sessions.map(s => (
                   <div key={s.id_ctr} className="dropdown-item"
                     title={`Atualizado a ${s.updated_at}`}
-                    style={{ padding: '8px', cursor: 'pointer', fontSize: '14px', color: selectedSession === s.id_ctr ? 'var(--primary)' : 'var(--text-main)', background: selectedSession === s.id_ctr ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)', border: selectedSession === s.id_ctr ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
+                    style={{ padding: '8px', cursor: 'pointer', fontSize: '14px', color: selectedSession === s.id_ctr ? 'var(--primary)' : 'var(--text-main)', background: selectedSession === s.id_ctr ? 'rgba(59, 130, 246, 0.15)' : 'var(--glass-bg-subtle)', border: selectedSession === s.id_ctr ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--glass-border)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
                     onClick={() => { loadSessionHistory({target: {value: s.id_ctr}}); setIsDropdownOpen(false); }}
                   >
-                    <strong style={{ color: selectedSession === s.id_ctr ? 'var(--primary)' : 'white' }}>{s.id_ctr}</strong> 
+                    <strong style={{ color: selectedSession === s.id_ctr ? 'var(--primary)' : 'var(--text-main)' }}>{s.id_ctr}</strong> 
                   </div>
                 ))}
               </div>
@@ -780,10 +779,10 @@ export default function Dashboard() {
 
           {/* Novos Ícones de Métricas, Drive e Ações ao lado do Dropdown */}
           {!loadingHistory && selectedSession && historyData.length > 0 && (
-             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15, 23, 42, 0.4)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--panel-bg-translucent)', padding: '6px 12px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                  
                  {/* Métricas */}
-                 <div style={{ display: 'flex', gap: '12px', marginRight: '4px', borderRight: '1px solid rgba(255,255,255,0.1)', paddingRight: '12px' }}>
+                 <div style={{ display: 'flex', gap: '12px', marginRight: '4px', borderRight: '1px solid var(--glass-border)', paddingRight: '12px' }}>
                     <span title="Total de Mensagens" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-main)' }}><strong>{summary.total}</strong> Total</span>
                     <span title="Sucessos" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '13px' }}><CheckCircle2 size={16} /> <strong>{summary.success}</strong></span>
                     <span title="Erros" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--danger)', fontSize: '13px' }}><AlertCircle size={16} /> <strong>{summary.error}</strong></span>
@@ -802,14 +801,14 @@ export default function Dashboard() {
                  )}
 
                  {(gdriveInfo.sheetId || gdriveInfo.folderId) && (
-                     <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }}></div>
+                     <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)', margin: '0 4px' }}></div>
                  )}
 
                  {/* Action Buttons */}
                  <button onClick={() => window.location.href = `${API_BASE}/download/csv/${selectedSession}`} title="Baixar Relatório (CSV)" style={{ background: 'transparent', border: 'none', color: '#60A5FA', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
                      <Database size={16} />
                  </button>
-                 <button onClick={() => window.location.href = `${API_BASE}/download/zip/${selectedSession}`} title="Baixar ZIP Completo" style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
+                 <button onClick={() => window.location.href = `${API_BASE}/download/zip/${selectedSession}`} title="Baixar ZIP Completo" style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
                      <DownloadCloud size={16} />
                  </button>
                  <button onClick={deleteSession} title="Apagar Sessão e Links" style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', padding: '6px', display: 'flex', transition: '0.2s' }}>
@@ -825,11 +824,11 @@ export default function Dashboard() {
             <p className="mt-4 text-muted">A carregar dados do projeto...</p>
           </div>
         ) : selectedSession && historyData.length > 0 ? (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             {/* O Resumo Compacto anterior foi movido para ícones ao lado do dropdown! */}
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', marginBottom: '24px' }}>
+              <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-dark)', zIndex: 1 }}>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
@@ -844,27 +843,27 @@ export default function Dashboard() {
                   </thead>
                   <tbody>
                     {historyData.map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                         <td style={{ padding: '4px 10px' }}>{item.list_code}</td>
                         <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
                         <td style={{ padding: '4px 10px' }}>{item.name}</td>
                         <td style={{ padding: '4px 10px' }}>{item.phone}</td>
                         <td style={{ padding: '4px 10px' }}>
-                          <span style={{ 
-                            padding: '2px 6px', 
-                            borderRadius: '4px', 
-                            background: item.status === 'Pendente' ? 'rgba(255,255,255,0.1)' : (item.status && item.status.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                            color: item.status === 'Pendente' ? 'var(--text-main)' : (item.status && item.status.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', minWidth: '70px', textAlign: 'center',
+                            background: item.status === 'Pendente' ? 'var(--glass-bg-active)' : (item.status && item.status.includes('Erro')) ? 'var(--danger-bg)' : 'var(--success-bg)',
+                            color: item.status === 'Pendente' ? 'var(--text-muted)' : (item.status && item.status.includes('Erro')) ? 'var(--danger)' : 'var(--success)',
+                            border: item.status === 'Pendente' ? '1px solid var(--glass-border)' : '1px solid transparent'
                           }}>
-                            {item.status || 'Pendente'}
+                            {item.status}
                           </span>
                         </td>
                         <td style={{ padding: '4px 10px' }}>
-                          <span style={{ 
-                            padding: '2px 6px', 
-                            borderRadius: '4px', 
-                            background: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'rgba(255,255,255,0.1)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                            color: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--text-main)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger)' : 'var(--success)'
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', minWidth: '70px', textAlign: 'center',
+                            background: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--glass-bg-active)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger-bg)' : 'var(--success-bg)',
+                            color: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? 'var(--text-muted)' : (item.status_levantamento && item.status_levantamento.includes('Erro')) ? 'var(--danger)' : 'var(--success)',
+                            border: (!item.status_levantamento || item.status_levantamento === 'Pendente') ? '1px solid var(--glass-border)' : '1px solid transparent'
                           }}>
                             {item.status_levantamento || 'Pendente'}
                           </span>

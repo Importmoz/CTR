@@ -7,9 +7,9 @@ import History from './pages/History';
 import Settings from './pages/Settings';
 import GoogleCallback from './pages/GoogleCallback';
 import BillingGuard from './components/BillingGuard';
-import { LayoutDashboard, Send, History as HistoryIcon, Settings as SettingsIcon, LogOut, MessageCircle, Wrench } from 'lucide-react';
+import { LayoutDashboard, Send, History as HistoryIcon, Settings as SettingsIcon, LogOut, MessageCircle, Wrench, Sun, Moon } from 'lucide-react';
 
-function ProtectedLayout({ children, setAuth }) {
+function ProtectedLayout({ children, setAuth, theme, toggleTheme }) {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -22,21 +22,21 @@ function ProtectedLayout({ children, setAuth }) {
   const getLinkStyle = (path) => {
     const isActive = currentPath === path;
     return {
-      color: isActive ? '#f8fafc' : '#94a3b8',
+      color: isActive ? 'var(--primary)' : 'var(--text-muted)',
       textDecoration: 'none',
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
       padding: '8px 16px',
       borderRadius: '12px',
-      background: isActive ? 'linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.05) 100%)' : 'transparent',
+      background: isActive ? 'var(--bg-grad-1)' : 'transparent',
       fontWeight: isActive ? '700' : '600',
       textTransform: 'uppercase',
       letterSpacing: '0.5px',
       fontSize: '13px',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      border: isActive ? '1px solid rgba(59,130,246,0.3)' : '1px solid transparent',
-      boxShadow: isActive ? '0 4px 12px rgba(59,130,246,0.1)' : 'none'
+      border: isActive ? '1px solid var(--glass-border)' : '1px solid transparent',
+      boxShadow: isActive ? '0 4px 12px var(--shadow-color)' : 'none'
     };
   };
 
@@ -44,9 +44,9 @@ function ProtectedLayout({ children, setAuth }) {
     <BillingGuard>
       <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-dark)' }}>
       <nav className="top-nav" style={{ 
-        background: 'rgba(15, 23, 42, 0.8)', 
+        background: 'var(--panel-bg-translucent)', 
         backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)', 
+        borderBottom: '1px solid var(--glass-border)', 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
@@ -70,7 +70,7 @@ function ProtectedLayout({ children, setAuth }) {
           <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
             <MessageCircle size={18} strokeWidth={2.5} />
             <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-dark)', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#3b82f6', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: 'var(--primary)', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Wrench size={10} strokeWidth={3} color="white" />
               </div>
             </div>
@@ -87,7 +87,7 @@ function ProtectedLayout({ children, setAuth }) {
           </span>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--glass-bg-subtle)', padding: '6px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
           <Link to="/" style={getLinkStyle('/')}>
             <LayoutDashboard size={16} color={currentPath === '/' ? '#60a5fa' : 'currentColor'} /> DASHBOARD
           </Link>
@@ -102,9 +102,23 @@ function ProtectedLayout({ children, setAuth }) {
           </Link>
         </div>
 
-        <div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button onClick={toggleTheme} style={{
+            background: 'var(--glass-bg-subtle)',
+            border: '1px solid var(--glass-border)',
+            color: 'var(--text-main)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+            borderRadius: '12px',
+            transition: 'all 0.2s'
+          }} title="Mudar Tema">
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <button onClick={handleLogout} style={{ 
-            background: 'rgba(239, 68, 68, 0.1)', 
+            background: 'var(--danger-bg)', 
             border: '1px solid rgba(239, 68, 68, 0.2)', 
             color: '#f87171', 
             cursor: 'pointer', 
@@ -120,7 +134,7 @@ function ProtectedLayout({ children, setAuth }) {
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'none'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--danger-bg)'; e.currentTarget.style.transform = 'none'; }}
           >
             <LogOut size={16} /> SAIR
           </button>
@@ -136,6 +150,16 @@ function ProtectedLayout({ children, setAuth }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -153,19 +177,19 @@ function App() {
         />
         <Route 
           path="/" 
-          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated}><History /></ProtectedLayout> : <Navigate to="/login" />} 
+          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated} theme={theme} toggleTheme={toggleTheme}><History /></ProtectedLayout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/history" 
-          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated}><Dashboard /></ProtectedLayout> : <Navigate to="/login" />} 
+          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated} theme={theme} toggleTheme={toggleTheme}><Dashboard /></ProtectedLayout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/painel" 
-          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated}><SendPanel /></ProtectedLayout> : <Navigate to="/login" />} 
+          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated} theme={theme} toggleTheme={toggleTheme}><SendPanel /></ProtectedLayout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/settings" 
-          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated}><Settings /></ProtectedLayout> : <Navigate to="/login" />} 
+          element={isAuthenticated ? <ProtectedLayout setAuth={setIsAuthenticated} theme={theme} toggleTheme={toggleTheme}><Settings /></ProtectedLayout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/api/google/auth/callback" 

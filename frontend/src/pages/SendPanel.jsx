@@ -246,7 +246,7 @@ export default function SendPanel() {
         </div>
 
         {/* Toggle Switch */}
-        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', background: 'var(--glass-bg-subtle)', padding: '6px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
           <button 
             onClick={() => setActiveView('envio')}
             style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: activeView === 'envio' ? 'var(--primary)' : 'transparent', color: activeView === 'envio' ? '#fff' : 'var(--text-muted)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s' }}
@@ -259,7 +259,7 @@ export default function SendPanel() {
           >
             Fila de Disparo
             {sendingJobs.length > 0 && (
-              <span style={{ background: activeView === 'fila' ? 'rgba(255,255,255,0.2)' : 'var(--primary)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' }}>
+              <span style={{ background: activeView === 'fila' ? 'var(--glass-bg-active)' : 'var(--primary)', color: 'white', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' }}>
                 {sendingJobs.length}
               </span>
             )}
@@ -268,8 +268,8 @@ export default function SendPanel() {
       </div>
 
       {activeView === 'envio' && (
-        <div className="flex-row gap-6 animate-fade-in" style={{ flex: 1, overflow: 'visible', paddingTop: '16px' }}>
-        <div style={{ flex: '1', minWidth: '250px', display: 'flex', flexDirection: 'column', overflow: 'visible', height: '100%' }}>
+        <div className="flex-row gap-6 animate-fade-in" style={{ flex: 1, overflow: 'hidden', paddingTop: '16px' }}>
+        <div style={{ flex: '1', minWidth: '250px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
           <h3 style={{ flexShrink: 0, paddingLeft: '4px' }}>Sessões Gravadas</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 50px)', alignContent: 'start', gap: '8px', marginTop: '16px', overflowY: 'auto' }}>
             {sessions.length === 0? (
@@ -280,7 +280,7 @@ export default function SendPanel() {
                   key={s.id_ctr}
                   onClick={() => loadSession(s.id_ctr)}
                   className={`btn ${selectedSession === s.id_ctr? 'btn-primary' : ''}`}
-                  style={{ width: '50px', padding: '8px 4px', justifyContent: 'center', background: selectedSession === s.id_ctr? '' : 'rgba(255,255,255,0.05)', color: 'var(--text-main)' }}
+                  style={{ width: '50px', padding: '8px 4px', justifyContent: 'center', background: selectedSession === s.id_ctr? '' : 'var(--glass-bg-hover)', color: 'var(--text-main)' }}
                 >
                   {s.id_ctr}
                 </button>
@@ -289,14 +289,14 @@ export default function SendPanel() {
           </div>
         </div>
 
-        <div style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'visible', height: '100%' }}>
+        <div style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'visible', minHeight: 0, height: '100%' }}>
           {loading? (
             <div className="flex-col items-center justify-center py-8" style={{ flex: 1 }}>
               <div className="spinner"></div>
               <p className="mt-4 text-muted">A carregar...</p>
             </div>
           ) : queue.length > 0? (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'visible' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'visible', minHeight: 0 }}>
               <div className="flex-row justify-between items-center flex-wrap gap-4" style={{ marginBottom: '24px' }}>
                 <h3>Mensagens ({queue.length})</h3>
                 <div className="flex-row gap-4 items-center">
@@ -322,23 +322,23 @@ export default function SendPanel() {
                           left: 0,
                           width: '100%',
                           marginTop: '4px',
-                          background: 'rgba(15, 23, 42, 0.95)',
+                          background: 'var(--bg-dark)',
                           border: '1px solid var(--border-color)',
                           borderRadius: '12px',
                           overflow: 'hidden',
                           zIndex: 50,
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                          boxShadow: '0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color)'
                         }}>
                           <div 
                             className="dropdown-item"
-                            style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: sendMode === 'normal' ? 'var(--primary)' : 'var(--text-main)', background: sendMode === 'normal' ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                            style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: sendMode === 'normal' ? 'var(--primary)' : 'var(--text-main)', background: sendMode === 'normal' ? 'var(--glass-bg-hover)' : 'transparent' }}
                             onClick={() => { setSendMode('normal'); setIsModeOpen(false); }}
                           >
                             Normal
                           </div>
                           <div 
                             className="dropdown-item"
-                            style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: sendMode === 'levantamento' ? 'var(--primary)' : 'var(--text-main)', background: sendMode === 'levantamento' ? 'rgba(59, 130, 246, 0.1)' : 'transparent' }}
+                            style={{ padding: '10px 12px', cursor: 'pointer', fontSize: '14px', color: sendMode === 'levantamento' ? 'var(--primary)' : 'var(--text-main)', background: sendMode === 'levantamento' ? 'var(--glass-bg-hover)' : 'transparent' }}
                             onClick={() => { setSendMode('levantamento'); setIsModeOpen(false); }}
                           >
                             Levantamento
@@ -348,7 +348,7 @@ export default function SendPanel() {
                     </div>
                   </div>
                   {queue.some(it => (sendMode === 'levantamento' ? it.status_levantamento : it.status)?.includes('Erro')) && (
-                    <button onClick={handleStartSend} disabled={isSending} className="btn" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#F87171', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer' }} title="Adicionar de volta à fila para re-tentar o envio a todos os que falharam">
+                    <button onClick={handleStartSend} disabled={isSending} className="btn" style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger)', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer' }} title="Adicionar de volta à fila para re-tentar o envio a todos os que falharam">
                       <RefreshCw size={16} /> Reenviar Falhados à Fila
                     </button>
                   )}
@@ -359,7 +359,7 @@ export default function SendPanel() {
               </div>
 
               {sendMode === 'levantamento' && (
-                <div className="flex-row gap-4 mb-6 animate-fade-in" style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', flexWrap: 'wrap', position: 'relative', zIndex: 10, alignItems: 'flex-end' }}>
+                <div className="flex-row gap-4 mb-6 animate-fade-in" style={{ background: 'var(--glass-bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', flexWrap: 'wrap', position: 'relative', zIndex: 10, alignItems: 'flex-end' }}>
                   <div style={{ width: '125px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Data da Entrega</label>
                     <div className="input-wrapper">
@@ -440,16 +440,19 @@ export default function SendPanel() {
                     const currentStatus = sendMode === 'levantamento' ? (item.status_levantamento || 'Pendente') : (item.status || 'Pendente');
                     const currentError = sendMode === 'levantamento' ? (item.error_levantamento || '') : (item.error || '');
                     return (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '4px 10px' }}>{item.id_code}</td>
                       <td style={{ padding: '4px 10px' }}>{item.name}</td>
                       <td style={{ padding: '4px 10px' }}>{item.phone}</td>
                       <td style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                         <span style={{
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          background: currentStatus === 'Pendente'? 'rgba(255,255,255,0.1)' : currentStatus.includes('Erro')? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                          color: currentStatus === 'Pendente'? 'var(--text-main)' : currentStatus.includes('Erro')? 'var(--danger)' : 'var(--success)'
+                          padding: '4px 10px', 
+                          borderRadius: '12px', 
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          background: currentStatus === 'Pendente'? 'var(--glass-bg-hover)' : currentStatus.includes('Erro')? 'var(--danger-bg)' : 'var(--success-bg)',
+                          color: currentStatus === 'Pendente'? 'var(--text-main)' : currentStatus.includes('Erro')? 'var(--danger)' : 'var(--success)',
+                          border: currentStatus === 'Pendente'? '1px solid var(--glass-border)' : '1px solid transparent'
                         }}>
                           {currentStatus}
                           {currentError && <div style={{ fontSize: '10px', marginTop: '2px' }}>{currentError}</div>}
@@ -528,9 +531,9 @@ export default function SendPanel() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {sendingJobs.map((job) => (
               <div key={job.job_id} style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                background: 'var(--glass-bg-subtle)',
+                border: '1px solid var(--glass-border)',
+                boxShadow: '0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color)',
                 borderRadius: '8px',
                 padding: '8px 12px',
                 display: 'flex',
@@ -554,7 +557,7 @@ export default function SendPanel() {
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Progresso: {job.progress} de {job.total} mensagens</span>
                     {job.status === 'completed' && <span style={{ color: '#10B981', flexShrink: 0, marginLeft: '8px' }}>Disparo Concluído!</span>}
                   </div>
-                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="progress-container" style={{ height: '4px', margin: 0, background: 'var(--glass-bg-subtle)' }}>
                     <div className="progress-bar" style={{
                       width: `${job.total > 0 ? (job.progress / job.total) * 100 : 0}%`,
                       background: job.status === 'error' ? '#EF4444' : job.status === 'completed' ? '#10B981' : 'var(--success)'

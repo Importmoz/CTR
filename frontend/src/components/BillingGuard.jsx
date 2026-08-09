@@ -85,30 +85,33 @@ const BillingGuard = ({ children }) => {
       {showModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 99999,
-          background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(8px)',
+          background: 'var(--panel-bg-solid)', backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)', border: '1px solid var(--border-color)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'Inter, sans-serif'
         }}>
           <div style={{
             background: 'var(--bg-card)', border: '1px solid var(--border-color)',
             padding: '40px', borderRadius: '24px', width: '100%', maxWidth: '450px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 25px 50px -12px var(--shadow-color)',
             textAlign: 'center'
           }}>
-            <div style={{ 
-              width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.1)', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
-              border: '1px solid rgba(239,68,68,0.2)'
-            }}>
-              <ShieldAlert size={32} color="#ef4444" />
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ 
+                width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.1)', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
+                border: '1px solid rgba(239,68,68,0.2)'
+              }}>
+                <ShieldAlert size={32} color="#ef4444" />
+              </div>
+              
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '12px' }}>
+                Subscrição Inativa
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
+                {status?.message || "O acesso ao sistema foi suspenso. Para continuar a processar CTRs, por favor ative a sua licença mensal."}
+              </p>
             </div>
-            
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', marginBottom: '12px' }}>
-              Subscrição Inativa
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
-              {status?.message || "O acesso ao sistema foi suspenso. Para continuar a processar CTRs, por favor ative a sua licença mensal."}
-            </p>
 
             <form onSubmit={handleActivate} style={{ marginBottom: '24px' }}>
               <div style={{ position: 'relative', marginBottom: '16px' }}>
@@ -120,8 +123,8 @@ const BillingGuard = ({ children }) => {
                   onChange={(e) => setSubId(e.target.value)}
                   style={{
                     width: '100%', padding: '14px 16px 14px 44px', boxSizing: 'border-box',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)',
-                    borderRadius: '12px', color: 'white', fontSize: '14px',
+                    background: 'var(--glass-bg-subtle)', border: '1px solid var(--glass-border)',
+                    borderRadius: '12px', color: 'var(--text-main)', fontSize: '14px',
                     outline: 'none', transition: 'all 0.2s'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#3b82f6'}

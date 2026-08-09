@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { MessageCircle, Wrench, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { API_BASE } from '../config/api';
 
 export default function Login({ setAuth }) {
@@ -8,6 +8,7 @@ export default function Login({ setAuth }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -43,45 +44,85 @@ export default function Login({ setAuth }) {
 
   return (
     <div className="flex-col items-center justify-center animate-fade-in" style={{ minHeight: '100vh', width: '100%' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '300px', padding: '32px' }}>
         <div className="flex-col items-center gap-4" style={{ marginBottom: '32px' }}>
-          <div style={{ background: 'var(--primary)', padding: '16px', borderRadius: '50%' }}>
-            <Lock size={32} color="white" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)' }}>
+              <MessageCircle size={28} strokeWidth={2.5} />
+              <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-card)', borderRadius: '50%', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'var(--primary)', borderRadius: '50%', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Wrench size={14} strokeWidth={3} color="white" />
+                </div>
+              </div>
+            </div>
+            <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Whatss
+            </h1>
           </div>
-          <h2>Acesso Restrito</h2>
         </div>
 
         <form onSubmit={handleLogin} className="flex-col gap-4">
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>E-mail</label>
+          <div style={{ position: 'relative' }}>
+            <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="email" 
               className="glass-input" 
+              style={{ paddingLeft: '40px', background: 'var(--glass-bg-subtle)', border: '1px solid transparent', opacity: loading ? 0.6 : 1 }}
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="seu@email.com"
+              placeholder="Email"
+              disabled={loading}
               required 
             />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Palavra-passe</label>
+          <div style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               className="glass-input" 
+              style={{ paddingLeft: '40px', paddingRight: '40px', background: 'var(--glass-bg-subtle)', border: '1px solid transparent', opacity: loading ? 0.6 : 1 }}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Password"
+              disabled={loading}
               required 
             />
+            <div 
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-muted)' }}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </div>
           </div>
 
           {error && <div style={{ color: 'var(--danger)', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={loading}>
-            {loading ? 'A verificar...' : 'Entrar'}
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ 
+              width: '100%', marginTop: '16px', padding: '12px', fontSize: '15px', 
+              display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+              opacity: loading ? 0.8 : 1, transition: 'all 0.3s ease'
+            }} 
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 size={18} className="spin-animation" style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Lock size={16} />
+            )}
+            {loading ? 'A autenticar...' : 'Iniciar Sessão'}
           </button>
         </form>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

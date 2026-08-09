@@ -11,6 +11,53 @@
   --success: #10b981;
   --danger: #ef4444;
   --glass-blur: 12px;
+  color-scheme: dark;
+  
+  /* Theme Transparencies (Dark Mode Defaults) */
+  --glass-bg-subtle: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-bg-active: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --panel-bg-solid: rgba(15, 23, 42, 0.98);
+  --panel-bg-translucent: rgba(15, 23, 42, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --danger-bg: rgba(239, 68, 68, 0.2);
+  --success-bg: rgba(16, 185, 129, 0.2);
+  
+  --bg-grad-1: rgba(59, 130, 246, 0.15);
+  --bg-grad-2: rgba(16, 185, 129, 0.1);
+  
+  --scrollbar-track: rgba(15, 23, 42, 0.4);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="light"] {
+  --bg-dark: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  color-scheme: light;
+  
+  --glass-bg-subtle: rgba(0, 0, 0, 0.02);
+  --glass-bg-hover: rgba(0, 0, 0, 0.06);
+  --glass-bg-active: rgba(0, 0, 0, 0.12);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --panel-bg-solid: rgba(255, 255, 255, 0.95);
+  --panel-bg-translucent: rgba(255, 255, 255, 0.8);
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --success-bg: rgba(16, 185, 129, 0.15);
+
+  --bg-grad-1: rgba(59, 130, 246, 0.08);
+  --bg-grad-2: rgba(16, 185, 129, 0.05);
+  
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -22,8 +69,8 @@
 body {
   font-family: 'Inter', -apple-system, sans-serif;
   background: var(--bg-dark);
-  background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
-                    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1), transparent 40%);
+  background-image: radial-gradient(circle at top right, var(--bg-grad-1), transparent 40%),
+                    radial-gradient(circle at bottom left, var(--bg-grad-2), transparent 40%);
   color: var(--text-main);
   height: 100vh;
   overflow: hidden;
@@ -41,15 +88,15 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--scrollbar-track);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Glassmorphism Classes */
@@ -60,14 +107,14 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px 0 var(--shadow-color);
 }
 
 .kpi-card {
   padding: 20px;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--panel-bg-translucent);
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -79,8 +126,8 @@ body {
 
 .kpi-card:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1);
-  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 12px 24px -10px var(--shadow-color), 0 0 0 1px var(--glass-border);
+  background: var(--panel-bg-solid);
 }
 
 .kpi-card::before {
@@ -96,7 +143,7 @@ body {
 }
 
 .glass-input {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--glass-bg-subtle);
   border: 1px solid var(--border-color);
   color: var(--text-main);
   padding: 8px 12px;
@@ -105,11 +152,11 @@ body {
   font-family: 'Inter', sans-serif;
   transition: all 0.2s ease;
   outline: none;
-  color-scheme: dark; /* Faz os datepickers nativos ficarem em Dark Mode! */
 }
 
 .glass-input:focus {
   border-color: var(--primary);
+  background: var(--panel-bg-solid);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -117,7 +164,7 @@ body {
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--glass-bg-subtle);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 0 8px;
@@ -138,7 +185,6 @@ body {
   padding: 8px 6px 8px 6px;
   width: 100%;
   outline: none;
-  color-scheme: dark;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
 }
@@ -229,7 +275,7 @@ h1, h2, h3 {
 /* Progress Bar */
 .progress-container {
   width: 100%;
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--glass-bg-subtle);
   border-radius: 99px;
   height: 8px;
   overflow: hidden;
@@ -254,12 +300,12 @@ h1, h2, h3 {
 
 /* Custom React DatePicker Styles for Glassmorphism */
 .react-datepicker {
-  background-color: #0f172a !important; /* var(--bg-dark) */
-  border: 1px solid var(--primary) !important;
+  background-color: var(--panel-bg-solid) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
   font-family: 'Inter', sans-serif !important;
   color: var(--text-main) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 8px 32px 0 var(--shadow-color) !important;
 }
 
 .react-datepicker__header {
@@ -303,7 +349,7 @@ h1, h2, h3 {
 }
 
 .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--glass-bg-hover) !important;
 }
 
 .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
@@ -328,7 +374,7 @@ h1, h2, h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--panel-bg-translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 1000;
@@ -339,9 +385,9 @@ h1, h2, h3 {
 }
 
 .modal-content {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 24px 64px var(--shadow-color);
   border-radius: 16px;
   width: 100%;
   max-width: 800px;

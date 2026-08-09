@@ -149,7 +149,7 @@ export default function Settings() {
       )}
 
       {/* Tabs Navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'var(--glass-bg-subtle)', padding: '6px', borderRadius: '16px', border: '1px solid var(--glass-border)', overflowX: 'auto', flexShrink: 0, position: 'relative', zIndex: 10 }}>
         {[
           { id: 'geral', label: 'Geral', icon: <MessageSquare size={16} /> },
           { id: 'integracoes', label: 'Integrações', icon: <Save size={16} /> },
@@ -179,7 +179,7 @@ export default function Settings() {
         {/* Templates Section - Geral Tab */}
         {activeTab === 'geral' && (
           <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
             <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '10px', borderRadius: '12px' }}>
               <MessageSquare size={24} color="#60a5fa" />
             </div>
@@ -192,7 +192,7 @@ export default function Settings() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px' }}>
             
             {/* Cargas */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <Truck size={14} /> Cargas
               </h4>
@@ -203,7 +203,7 @@ export default function Settings() {
             </div>
 
             {/* Regras */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <BookOpen size={14} /> Regras
               </h4>
@@ -214,7 +214,7 @@ export default function Settings() {
             </div>
 
             {/* Bancos */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <Building2 size={14} /> Bancos
               </h4>
@@ -225,7 +225,7 @@ export default function Settings() {
             </div>
 
             {/* Levantamentos */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <Banknote size={14} /> Levantamentos
               </h4>
@@ -242,7 +242,7 @@ export default function Settings() {
         {/* Integração Google Drive - Integrações Tab */}
         {activeTab === 'integracoes' && (
           <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '10px', borderRadius: '12px' }}>
               <Save size={24} color="#34d399" />
             </div>
@@ -312,7 +312,7 @@ export default function Settings() {
         {/* Informações da Subscrição - Subscricao Tab */}
         {activeTab === 'subscricao' && subStatus && subStatus.details && (
           <div className="glass-panel animate-fade-in" style={{ padding: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
               <div style={{ background: 'rgba(167, 139, 250, 0.2)', padding: '10px', borderRadius: '12px' }}>
                 <CreditCard size={24} color="#a78bfa" />
               </div>
@@ -323,7 +323,7 @@ export default function Settings() {
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '12px' }}>
                 <Zap size={24} color="var(--primary)" opacity={0.7} />
                 <div>
                   <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Plano Atual</p>
@@ -334,7 +334,7 @@ export default function Settings() {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '12px' }}>
                 <User size={24} color="var(--primary)" opacity={0.7} />
                 <div>
                   <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Titular</p>
@@ -343,7 +343,7 @@ export default function Settings() {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--glass-bg-subtle)', padding: '16px', borderRadius: '12px' }}>
                 <Calendar size={24} color="var(--primary)" opacity={0.7} />
                 <div>
                   <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próxima Renovação</p>
@@ -361,13 +361,13 @@ export default function Settings() {
         {activeTab === 'avancado' && (
           <div className="glass-panel animate-fade-in" style={{ 
             border: '1px solid rgba(239, 68, 68, 0.4)', 
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(30, 41, 59, 0.7) 100%)',
+            background: 'linear-gradient(135deg, var(--danger-bg) 0%, var(--bg-card) 100%)',
             position: 'relative',
             overflow: 'hidden',
             transition: 'all 0.3s'
           }}
-        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 30px rgba(239, 68, 68, 0.2)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.8)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.3)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.4)'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 12px 40px 0 var(--shadow-color)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.6)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 8px 32px 0 var(--shadow-color)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.4)'; }}
         >
           <div style={{ position: 'absolute', top: '-50px', right: '-50px', opacity: 0.05, transform: 'rotate(15deg)' }}>
             <AlertTriangle size={200} color="#ef4444" />
@@ -383,13 +383,13 @@ export default function Settings() {
             </div>
           </div>
           
-          <p style={{ color: '#cbd5e1', marginBottom: '24px', lineHeight: '1.6', fontSize: '14px', maxWidth: '800px' }}>
+          <p style={{ color: 'var(--text-main)', marginBottom: '24px', lineHeight: '1.6', fontSize: '14px', maxWidth: '800px' }}>
             Atenção! Esta ação é destrutiva e irreversível. Vai apagar permanentemente todo o histórico de envios, 
             ficheiros processados gerados e limpar as opções do sistema.
           </p>
           
-          <form onSubmit={handleReset} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px', background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px', border: '1px dashed rgba(239, 68, 68, 0.3)' }}>
-            <div className="input-wrapper" style={{ width: '250px', background: 'rgba(15, 23, 42, 0.8)' }}>
+          <form onSubmit={handleReset} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px', background: 'var(--panel-bg-translucent)', padding: '20px', borderRadius: '12px', border: '1px dashed rgba(239, 68, 68, 0.3)' }}>
+            <div className="input-wrapper" style={{ width: '250px', background: 'var(--panel-bg-translucent)' }}>
               <input 
                 type="password" 
                 placeholder="Código Autenticação" 
