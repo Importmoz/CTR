@@ -26,6 +26,11 @@ from core.queue_manager import queue_manager
 from core.subscription import SubscriptionManager
 import uuid
 import time
+import re
+import traceback
+
+def sanitize_path_param(param: str) -> str:
+    return re.sub(r'[^a-zA-Z0-9_-]', '', param)
 
 app = FastAPI(title="Processador CTR API")
 
@@ -40,11 +45,41 @@ def require_subscription():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+_token_cache = {}
+
+def get_current_user(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Acesso negado. Token de autenticação ausente.")
+    
+    token = auth_header.split(" ")[1]
+    
+    # Simple in-memory cache for 5 minutes
+    now = time.time()
+    if token in _token_cache and now - _token_cache[token]['time'] < 300:
+        return _token_cache[token]['user']
+
+    pb_base_url = os.getenv("POCKETBASE_URL", "http://pocketbase-cgk4w0o8koocsg4wggsgg888.144.91.110.199.sslip.io").rstrip("/")
+    auth_endpoint = f"{pb_base_url}/api/collections/users/auth-refresh"
+    
+    try:
+        response = requests.post(auth_endpoint, headers={"Authorization": auth_header}, timeout=5)
+        if response.status_code == 200:
+            user_data = response.json().get('record')
+            _token_cache[token] = {'time': now, 'user': user_data}
+            return user_data
+        else:
+            raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Não foi possível validar o token de segurança.")
 
 @app.on_event("startup")
 async def startup_event():
@@ -95,15 +130,8 @@ async def login(username: str = Form(...), password: str = Form(...)):
         else:
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
     except requests.exceptions.RequestException as re:
-        # Fallback de emergência (se o Pocketbase estiver offline)
-        print(f"Aviso: Erro de conexão ao Pocketbase ({str(re)}). A usar fallback local.")
-        if username == "admin@admin.com" and password == "123456":
-            return {
-                "success": True, 
-                "token": "local-fallback-token", 
-                "user": {"id": "local", "email": "admin@admin.com", "name": "Admin Local"}
-            }
-        raise HTTPException(status_code=503, detail="Servidor de autenticação indisponível e as credenciais locais falharam.")
+        print(f"Erro de conexão ao Pocketbase: {re}")
+        raise HTTPException(status_code=503, detail="Servidor de autenticação indisponível.")
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -131,7 +159,7 @@ def read_excel_smart(content: bytes) -> pd.DataFrame:
     bio.seek(0)
     return pd.read_excel(bio, skiprows=3)
 
-@app.post("/upload", dependencies=[Depends(require_subscription)])
+@app.post("/upload", dependencies=[Depends(require_subscription), Depends(get_current_user)])
 async def upload_file(
     file: UploadFile = File(...),
     id_ctr: str = Form(...),
@@ -150,7 +178,8 @@ async def upload_file(
         # Guardar ficheiro temporário para o worker da fila processar
         os.makedirs(os.path.join("db", "uploads"), exist_ok=True)
         ts = int(time.time())
-        temp_filename = f"temp_{id_ctr}_{ts}_{uuid.uuid4().hex[:6]}.xlsx"
+        safe_id_ctr = sanitize_path_param(id_ctr)
+        temp_filename = f"temp_{safe_id_ctr}_{ts}_{uuid.uuid4().hex[:6]}.xlsx"
         file_path = os.path.join("db", "uploads", temp_filename)
         with open(file_path, "wb") as f:
             f.write(content)
@@ -181,17 +210,17 @@ async def websocket_endpoint(websocket: WebSocket, id_ctr: str):
     except WebSocketDisconnect:
         manager.disconnect(id_ctr)
 
-@app.get("/sessions")
+@app.get("/sessions", dependencies=[Depends(get_current_user)])
 async def get_sessions():
     sessions = get_all_sessions()
     return {"sessions": sessions}
 
-@app.get("/metrics/summary")
+@app.get("/metrics/summary", dependencies=[Depends(get_current_user)])
 async def get_metrics_summary():
     metrics = get_general_metrics()
     return {"success": True, "metrics": metrics}
 
-@app.get("/sessions/{id_ctr}")
+@app.get("/sessions/{id_ctr}", dependencies=[Depends(get_current_user)])
 async def get_session(id_ctr: str):
     queue = load_session(id_ctr)
     if queue:
@@ -200,13 +229,9 @@ async def get_session(id_ctr: str):
         return {"success": True, "queue": queue, "sheetId": sheet_id, "folderId": folder_id}
     raise HTTPException(status_code=404, detail="Sessão não encontrada")
 
-class DeleteSessionRequest(BaseModel):
-    auth_code: str
-
-@app.post("/sessions/{id_ctr}/delete")
-async def delete_session_api(id_ctr: str, req: DeleteSessionRequest):
-    if req.auth_code != "792721":
-        raise HTTPException(status_code=401, detail="Código de autorização inválido")
+@app.post("/sessions/{id_ctr}/delete", dependencies=[Depends(get_current_user)])
+async def delete_session_api(id_ctr: str):
+    # Auth is handled by get_current_user dependency
         
     if delete_session(id_ctr):
         # Apagar a pasta com os dados gerados
@@ -220,14 +245,15 @@ async def delete_session_api(id_ctr: str, req: DeleteSessionRequest):
         return {"success": True}
     raise HTTPException(status_code=500, detail="Erro ao apagar sessão")
 
-@app.get("/download/zip/{id_ctr}")
+@app.get("/download/zip/{id_ctr}", dependencies=[Depends(get_current_user)])
 async def download_zip(id_ctr: str):
-    zip_path = os.path.join("db", f"{id_ctr}.zip")
+    safe_id_ctr = sanitize_path_param(id_ctr)
+    zip_path = os.path.join("db", f"{safe_id_ctr}.zip")
     if os.path.exists(zip_path):
         return FileResponse(zip_path, media_type="application/zip", filename=f"{id_ctr}.zip")
     raise HTTPException(status_code=404, detail="Ficheiro ZIP não encontrado")
 
-@app.get("/download/csv/{id_ctr}")
+@app.get("/download/csv/{id_ctr}", dependencies=[Depends(get_current_user)])
 async def download_csv(id_ctr: str):
     queue = load_session(id_ctr)
     if queue:
@@ -244,7 +270,7 @@ async def download_csv(id_ctr: str):
 class SettingsUpdate(BaseModel):
     settings: Dict[str, str]
 
-@app.get("/settings")
+@app.get("/settings", dependencies=[Depends(get_current_user)])
 def get_settings():
     keys = [
         'template_alerta_carga_pagar', 'template_alerta_carga_pago',
@@ -338,42 +364,37 @@ def google_callback(req: GoogleCallbackRequest, request: Request):
         traceback.print_exc()
         return {"success": False, "message": err_str}
 
-@app.post("/settings")
+@app.post("/settings", dependencies=[Depends(get_current_user)])
 async def update_settings(data: SettingsUpdate):
     for k, v in data.settings.items():
         save_setting(k, v)
     return {"success": True}
 
-class ResetRequest(BaseModel):
-    auth_code: str
-    confirm: bool
+@app.post("/reset", dependencies=[Depends(get_current_user)])
+async def reset_system():
+    try:
+        db_path = os.path.join("db", "ctr_database.db")
+        if os.path.exists(db_path):
+            conn = sqlite3.connect(db_path)
+            conn.execute("DROP TABLE IF EXISTS sessions")
+            conn.execute("DROP TABLE IF EXISTS settings")
+            conn.commit()
+            conn.close()
+        
+        init_db()
+        
+        import glob
+        for ctr_folder in glob.glob("db/*"):
+            if os.path.isdir(ctr_folder):
+                shutil.rmtree(ctr_folder)
+        for zip_file in glob.glob("db/*.zip"):
+            os.remove(zip_file)
+        return {"success": True}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/reset")
-async def reset_system(req: ResetRequest):
-    if req.auth_code == "792721" and req.confirm:
-        try:
-            db_path = os.path.join("db", "ctr_database.db")
-            if os.path.exists(db_path):
-                conn = sqlite3.connect(db_path)
-                conn.execute("DROP TABLE IF EXISTS sessions")
-                conn.execute("DROP TABLE IF EXISTS settings")
-                conn.commit()
-                conn.close()
-            
-            init_db()
-            
-            import glob
-            for ctr_folder in glob.glob("db/*"):
-                if os.path.isdir(ctr_folder):
-                    shutil.rmtree(ctr_folder)
-            for zip_file in glob.glob("db/*.zip"):
-                os.remove(zip_file)
-            return {"success": True}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-    raise HTTPException(status_code=401, detail="Código incorreto")
-
-@app.post("/send", dependencies=[Depends(require_subscription)])
+@app.post("/send", dependencies=[Depends(require_subscription), Depends(get_current_user)])
 async def start_sending(
     id_ctr: str = Form(...),
     send_mode: str = Form(...),
@@ -394,17 +415,17 @@ async def start_sending(
 
 # --- ROTAS DE GESTÃO E MONITORAMENTO DAS FILAS ---
 
-@app.get("/conversion-queue/status")
+@app.get("/conversion-queue/status", dependencies=[Depends(get_current_user)])
 async def get_conversion_queue_status():
     jobs = get_all_conversion_jobs()
     return {"success": True, "jobs": jobs}
 
-@app.post("/conversion-queue/remove/{job_id}")
+@app.post("/conversion-queue/remove/{job_id}", dependencies=[Depends(get_current_user)])
 async def remove_conversion_job_endpoint(job_id: str):
     delete_conversion_job(job_id)
     return {"success": True}
 
-@app.post("/conversion-queue/clear-completed")
+@app.post("/conversion-queue/clear-completed", dependencies=[Depends(get_current_user)])
 async def clear_completed_conversion_jobs():
     jobs = get_all_conversion_jobs()
     for job in jobs:
@@ -412,12 +433,12 @@ async def clear_completed_conversion_jobs():
             delete_conversion_job(job["job_id"])
     return {"success": True}
 
-@app.get("/send-queue/status")
+@app.get("/send-queue/status", dependencies=[Depends(get_current_user)])
 async def get_send_queue_status():
     jobs = get_all_sending_jobs()
     return {"success": True, "jobs": jobs}
 
-@app.post("/send-queue/add", dependencies=[Depends(require_subscription)])
+@app.post("/send-queue/add", dependencies=[Depends(require_subscription), Depends(get_current_user)])
 async def add_send_queue_job(
     id_ctr: str = Form(...),
     send_mode: str = Form(...),
@@ -436,12 +457,12 @@ async def add_send_queue_job(
     save_setting(f"stop_{id_ctr}", "false")
     return {"success": True, "message": "Sessão adicionada à fila de envio", "job_id": job_id}
 
-@app.post("/send-queue/remove/{job_id}")
+@app.post("/send-queue/remove/{job_id}", dependencies=[Depends(get_current_user)])
 async def remove_send_job_endpoint(job_id: str):
     delete_sending_job(job_id)
     return {"success": True}
 
-@app.post("/send-queue/clear-completed")
+@app.post("/send-queue/clear-completed", dependencies=[Depends(get_current_user)])
 async def clear_completed_send_jobs():
     jobs = get_all_sending_jobs()
     for job in jobs:
@@ -449,7 +470,7 @@ async def clear_completed_send_jobs():
             delete_sending_job(job["job_id"])
     return {"success": True}
 
-@app.post("/send/retry-item")
+@app.post("/send/retry-item", dependencies=[Depends(get_current_user)])
 async def retry_single_item_endpoint(
     id_ctr: str = Form(...),
     index: int = Form(...),
@@ -466,7 +487,7 @@ async def retry_single_item_endpoint(
         raise HTTPException(status_code=400, detail=result.get("error", "Erro ao reenviar mensagem"))
     return result
 
-@app.get("/whatsapp/conversation/{phone_number}")
+@app.get("/whatsapp/conversation/{phone_number}", dependencies=[Depends(get_current_user)])
 def get_conversation_endpoint(phone_number: str, limit: int = 50, offset: int = 1):
     from core.whatsapp import get_whatchimp_conversation
     from core.database import get_setting

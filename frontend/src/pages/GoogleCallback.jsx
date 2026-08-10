@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertTriangle, Loader } from 'lucide-react';
-import { API_BASE } from '../config/api';
+import { API_BASE, fetchApi } from '../config/api';
 
 export default function GoogleCallback() {
   const [searchParams] = useSearchParams();
@@ -20,7 +20,7 @@ export default function GoogleCallback() {
     const fetchToken = async () => {
       try {
         const code_verifier = localStorage.getItem('google_code_verifier') || '';
-        const res = await fetch(`${API_BASE}/google/callback`, {
+        const res = await fetchApi(`${API_BASE}/google/callback`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, code_verifier })

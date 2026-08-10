@@ -67,14 +67,7 @@ function ProtectedLayout({ children, setAuth, theme, toggleTheme }) {
           gap: '8px',
           letterSpacing: '-0.5px'
         }}>
-          <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
-            <MessageCircle size={18} strokeWidth={2.5} />
-            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-dark)', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: 'var(--primary)', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Wrench size={10} strokeWidth={3} color="white" />
-              </div>
-            </div>
-          </div>
+          <img src="/logo.png" alt="Whatss Logo" style={{ width: '56px', height: '56px', filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }} />
           <span style={{
             background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
             WebkitBackgroundClip: 'text',

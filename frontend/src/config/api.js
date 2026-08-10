@@ -30,3 +30,12 @@ const getWsUrl = () => {
 
 export const API_BASE = getApiUrl();
 export const WS_BASE = getWsUrl();
+
+export const fetchApi = async (url, options = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    ...options.headers,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+  return fetch(url, { ...options, headers });
+};

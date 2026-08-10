@@ -47,14 +47,7 @@ export default function Login({ setAuth }) {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '300px', padding: '32px' }}>
         <div className="flex-col items-center gap-4" style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <div style={{ position: 'relative', width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)' }}>
-              <MessageCircle size={28} strokeWidth={2.5} />
-              <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'var(--bg-card)', borderRadius: '50%', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ background: 'var(--primary)', borderRadius: '50%', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Wrench size={14} strokeWidth={3} color="white" />
-                </div>
-              </div>
-            </div>
+            <img src="/logo.png" alt="Whatss Logo" style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 8px 24px rgba(16, 185, 129, 0.4))' }} />
             <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Whatss
             </h1>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle, CreditCard, Calendar, User, Zap, Settings as SettingsIcon } from 'lucide-react';
-import { API_BASE } from '../config/api';
+import { API_BASE, fetchApi } from '../config/api';
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -28,7 +28,7 @@ export default function Settings() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`${API_BASE}/settings`);
+      const res = await fetchApi(`${API_BASE}/settings`);
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
@@ -40,7 +40,7 @@ export default function Settings() {
 
   const fetchSubscription = async () => {
     try {
-      const res = await fetch(`${API_BASE}/subscription/status`);
+      const res = await fetchApi(`${API_BASE}/subscription/status`);
       if (res.ok) {
         const data = await res.json();
         setSubStatus(data);
@@ -53,7 +53,7 @@ export default function Settings() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_BASE}/settings`, {
+      const res = await fetchApi(`${API_BASE}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings })
@@ -75,7 +75,7 @@ export default function Settings() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/reset`, {
+      const res = await fetchApi(`${API_BASE}/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ auth_code: resetCode, confirm: confirmReset })
@@ -267,7 +267,7 @@ export default function Settings() {
                   className="btn btn-outline" 
                   style={{ fontSize: '12px', padding: '6px 12px' }}
                   onClick={async () => {
-                    const res = await fetch(`${API_BASE}/google/auth-url`);
+                    const res = await fetchApi(`${API_BASE}/google/auth-url`);
                     const data = await res.json();
                     if (data.success) {
                       if (data.code_verifier) {
@@ -289,7 +289,7 @@ export default function Settings() {
                   className="btn btn-primary" 
                   style={{ alignSelf: 'flex-start' }}
                   onClick={async () => {
-                    const res = await fetch(`${API_BASE}/google/auth-url`);
+                    const res = await fetchApi(`${API_BASE}/google/auth-url`);
                     const data = await res.json();
                     if (data.success) {
                       if (data.code_verifier) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, TrendingUp, Users, XCircle, RefreshCw, Activity, Layers, LayoutDashboard, Folder, CheckCircle2 } from 'lucide-react';
-import { API_BASE } from '../config/api';
+import { API_BASE, fetchApi } from '../config/api';
 
 export default function History() {
   const [metrics, setMetrics] = useState({
@@ -19,7 +19,7 @@ export default function History() {
   const fetchMetrics = async () => {
     setLoadingMetrics(true);
     try {
-      const res = await fetch(`${API_BASE}/metrics/summary`);
+      const res = await fetchApi(`${API_BASE}/metrics/summary`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.metrics) {

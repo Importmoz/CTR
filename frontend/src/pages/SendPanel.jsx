@@ -3,7 +3,7 @@ import { Play, Calendar, Clock, DollarSign, Send, ChevronDown, List, Trash2, Che
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { setHours, setMinutes } from 'date-fns';
-import { API_BASE } from '../config/api';
+import { API_BASE, fetchApi } from '../config/api';
 import { MessageStatusPill } from '../components/MessageStatusPill';
 
 export default function SendPanel() {
@@ -42,7 +42,7 @@ export default function SendPanel() {
 
   const fetchSendingQueue = async () => {
     try {
-      const res = await fetch(`${API_BASE}/send-queue/status`);
+      const res = await fetchApi(`${API_BASE}/send-queue/status`);
       if (res.ok) {
         const data = await res.json();
         setSendingJobs(data.jobs || []);
@@ -54,14 +54,14 @@ export default function SendPanel() {
 
   const removeSendingJob = async (jobId) => {
     try {
-      await fetch(`${API_BASE}/send-queue/remove/${jobId}`, { method: 'POST' });
+      await fetchApi(`${API_BASE}/send-queue/remove/${jobId}`, { method: 'POST' });
       fetchSendingQueue();
     } catch (err) { console.error(err); }
   };
 
   const clearCompletedSendJobs = async () => {
     try {
-      await fetch(`${API_BASE}/send-queue/clear-completed`, { method: 'POST' });
+      await fetchApi(`${API_BASE}/send-queue/clear-completed`, { method: 'POST' });
       fetchSendingQueue();
     } catch (err) { console.error(err); }
   };
@@ -112,7 +112,7 @@ export default function SendPanel() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch(`${API_BASE}/sessions`);
+      const res = await fetchApi(`${API_BASE}/sessions`);
       const data = await res.json();
       setSessions(data.sessions || []);
     } catch (err) {
@@ -138,7 +138,7 @@ export default function SendPanel() {
     } catch(e) {}
 
     try {
-      const res = await fetch(`${API_BASE}/sessions/${id_ctr}`);
+      const res = await fetchApi(`${API_BASE}/sessions/${id_ctr}`);
       const data = await res.json();
       if (data.success) {
         setQueue(data.queue);
@@ -182,7 +182,7 @@ export default function SendPanel() {
       formData.append('valor_taxa_disp', levantamentoData.valor_taxa_disp);
     }
     try {
-      const res = await fetch(`${API_BASE}/send-queue/add`, { method: 'POST', body: formData });
+      const res = await fetchApi(`${API_BASE}/send-queue/add`, { method: 'POST', body: formData });
       if (res.ok) {
         alert("✅ Sessão adicionada à Fila de Envio do WhatsApp!\nO sistema processará os CTRs em ordem na fila.");
         fetchSendingQueue();
@@ -221,7 +221,7 @@ export default function SendPanel() {
       formData.append('valor_taxa_disp', levantamentoData.valor_taxa_disp);
     }
     try {
-      const res = await fetch(`${API_BASE}/send/retry-item`, { method: 'POST', body: formData });
+      const res = await fetchApi(`${API_BASE}/send/retry-item`, { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
         alert("✅ Mensagem reenviada com sucesso!");
@@ -475,7 +475,8 @@ export default function SendPanel() {
                         )}
                       </td>
                     </tr>
-                    )})}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>

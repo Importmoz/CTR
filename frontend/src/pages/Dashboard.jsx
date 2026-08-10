@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { UploadCloud, CheckCircle2, AlertCircle, DownloadCloud, Calendar, ChevronDown, MapPin, Navigation, ExternalLink, Copy, FileText, Folder, Check, Trash2, Database, History as HistoryIcon, List, MessageCircle } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { API_BASE, WS_BASE } from '../config/api';
+import { API_BASE, WS_BASE, fetchApi } from '../config/api';
 import { MessageStatusPill } from '../components/MessageStatusPill';
 
 const formatLocalDate = (date) => {
@@ -72,7 +72,7 @@ export default function Dashboard() {
     setShowConversation(true);
     setConversationLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/whatsapp/conversation/${phone}?limit=50&offset=1`);
+      const res = await fetchApi(`${API_BASE}/whatsapp/conversation/${phone}?limit=50&offset=1`);
       const data = await res.json();
       if (data.success && data.data && data.data.status === "1") {
         setCurrentConversation(data.data.message || []);
@@ -96,7 +96,7 @@ export default function Dashboard() {
 
   const fetchConversionQueue = async () => {
     try {
-      const res = await fetch(`${API_BASE}/conversion-queue/status`);
+      const res = await fetchApi(`${API_BASE}/conversion-queue/status`);
       if (res.ok) {
         const data = await res.json();
         setConversionQueue(data.jobs || []);
@@ -108,21 +108,21 @@ export default function Dashboard() {
 
   const removeConversionJob = async (jobId) => {
     try {
-      await fetch(`${API_BASE}/conversion-queue/remove/${jobId}`, { method: 'POST' });
+      await fetchApi(`${API_BASE}/conversion-queue/remove/${jobId}`, { method: 'POST' });
       fetchConversionQueue();
     } catch (err) { console.error(err); }
   };
 
   const clearCompletedConversionJobs = async () => {
     try {
-      await fetch(`${API_BASE}/conversion-queue/clear-completed`, { method: 'POST' });
+      await fetchApi(`${API_BASE}/conversion-queue/clear-completed`, { method: 'POST' });
       fetchConversionQueue();
     } catch (err) { console.error(err); }
   };
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch(`${API_BASE}/sessions`);
+      const res = await fetchApi(`${API_BASE}/sessions`);
       if (res.ok) {
         const data = await res.json();
         setSessions(data.sessions || []);
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
     setLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE}/sessions/${id_ctr}`);
+      const res = await fetchApi(`${API_BASE}/sessions/${id_ctr}`);
       if (res.ok) {
         const data = await res.json();
         const queue = data.queue || [];
@@ -170,19 +170,15 @@ export default function Dashboard() {
   const deleteSession = async () => {
     if (!selectedSession) return;
     
-    const code = window.prompt(`Para apagar a sessão ${selectedSession}, por favor insira o código de autorização:`);
-    if (code === null) return;
-    
-    if (!code.trim()) {
-      alert("Código não pode estar vazio.");
+    const confirmation = window.prompt(`Para apagar a sessão ${selectedSession}, por favor digite "APAGAR" para confirmar:`);
+    if (confirmation !== "APAGAR") {
+      alert("Ação cancelada. A palavra 'APAGAR' não foi introduzida corretamente.");
       return;
     }
     
     try {
-      const res = await fetch(`${API_BASE}/sessions/${selectedSession}/delete`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ auth_code: code.trim() })
+      const res = await fetchApi(`${API_BASE}/sessions/${selectedSession}/delete`, { 
+        method: 'POST'
       });
       
       if (res.ok) {
@@ -221,7 +217,7 @@ export default function Dashboard() {
 
   const startProcessing = async (data) => {
     try {
-      const res = await fetch(`${API_BASE}/upload`, {
+      const res = await fetchApi(`${API_BASE}/upload`, {
         method: 'POST',
         body: data,
       });

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import { API_BASE } from '../config/api';
+import { API_BASE, fetchApi } from '../config/api';
 
 export const MessageStatusPill = ({ status, wa_message_id, currentError }) => {
   const [realStatus, setRealStatus] = useState(status);
   
   useEffect(() => {
     if (status === 'Enviado' && wa_message_id) {
-      fetch(`${API_BASE}/whatsapp/status/${wa_message_id}`)
+      fetchApi(`${API_BASE}/whatsapp/status/${wa_message_id}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.data && data.data.message_status) {
