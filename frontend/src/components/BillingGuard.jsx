@@ -118,7 +118,7 @@ const BillingGuard = ({ children }) => {
                 <KeyRound size={18} color="#64748b" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="ID da Subscrição (ex: sub_abc123)"
+                  placeholder="ID da Subscrição Lemon Squeezy"
                   value={subId}
                   onChange={(e) => setSubId(e.target.value)}
                   style={{
@@ -158,7 +158,7 @@ const BillingGuard = ({ children }) => {
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
               <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '12px' }}>Ainda não tem uma subscrição?</p>
               <a 
-                href="https://creem.io" 
+                href="https://lemonsqueezy.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{
@@ -166,7 +166,7 @@ const BillingGuard = ({ children }) => {
                   color: '#3b82f6', textDecoration: 'none', fontSize: '14px', fontWeight: '500'
                 }}
               >
-                Assinar Plano Mensal <ExternalLink size={14} />
+                Gerir Subscrição Lemon Squeezy <ExternalLink size={14} />
               </a>
             </div>
           </div>

@@ -34,20 +34,22 @@ class SubscriptionManager:
         Verifica a validade da subscrição.
         Retorna um dicionário: {"is_active": bool, "status": str, "subscription_id": str, "message": str}
         """
-        subscription_id = get_setting("lemonsqueezy_subscription_id")
-        
-        if not subscription_id:
-            return {
-                "is_active": False,
-                "status": "missing",
-                "subscription_id": None,
-                "message": "Nenhuma subscrição configurada. Por favor, ative a sua licença."
+        # FREE TRIAL TEMPORÁRIO (ENQUANTO LEMON SQUEEZY ESTÁ EM REVISÃO)
+        return {
+            "is_active": True,
+            "status": "on_trial",
+            "subscription_id": "free_trial_mode",
+            "message": "Período Free Trial ativo (A aguardar revisão Lemon Squeezy).",
+            "details": {
+                "plan_name": "Plano Free Trial",
+                "price": 0,
+                "currency": "USD",
+                "customer_name": "Modo Avaliação",
+                "customer_email": "",
+                "current_period_start": datetime.now().isoformat(),
+                "current_period_end": (datetime.now() + timedelta(days=30)).isoformat(),
             }
-
-        if not force_refresh:
-            cached = cls.get_cached_status()
-            if cached:
-                return cached
+        }
 
         try:
             headers = {
