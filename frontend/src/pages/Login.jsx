@@ -44,11 +44,11 @@ export default function Login({ setAuth }) {
 
   return (
     <div className="flex-col items-center justify-center animate-fade-in" style={{ minHeight: '100vh', width: '100%' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '300px', padding: '32px' }}>
-        <div className="flex-col items-center gap-4" style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <img src="/logo.png" alt="Whatss Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(16, 185, 129, 0.4))' }} />
-            <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '360px', padding: '32px' }}>
+        <div className="flex-col items-center gap-4" style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+            <img src="/logo.png" alt="Whatss Logo" style={{ width: '50px', height: '50px', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }} />
+            <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '900', letterSpacing: '-0.5px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Whatss
             </h1>
           </div>
