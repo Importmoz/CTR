@@ -3,26 +3,38 @@
 
 const getApiUrl = () => {
   const customUrl = import.meta.env.VITE_API_URL;
+  let url = 'http://localhost:8000';
+
   if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
-    return customUrl.replace(/\/$/, ''); // Remover barra no final caso exista
+    url = customUrl.trim().replace(/\/$/, '');
+  } else if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Fallback de produção para o servidor backend Coolify
+    url = 'http://fsit226mdiud42a8v7eg3w4f.144.91.110.199.sslip.io';
   }
-  return 'http://localhost:8000';
+
+  // Prevenir erros de Conteúdo Misto (Mixed Content): Se a página rodar em HTTPS, o backend DEVE ser chamado via HTTPS
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+    url = url.replace(/^http:\/\//, 'https://');
+  }
+
+  return url;
 };
 
 const getWsUrl = () => {
   const customWsUrl = import.meta.env.VITE_WS_URL;
   if (customWsUrl && typeof customWsUrl === 'string' && customWsUrl.trim() !== '') {
-    return customWsUrl.replace(/\/$/, '');
+    let wsUrl = customWsUrl.trim().replace(/\/$/, '');
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
+      wsUrl = wsUrl.replace(/^ws:\/\//, 'wss://');
+    }
+    return wsUrl;
   }
   
-  // Se houver uma URL HTTP personalizada configurada no Coolify, converter automaticamente para WS/WSS
   const apiUrl = getApiUrl();
-  if (apiUrl !== 'http://localhost:8000') {
-    if (apiUrl.startsWith('https://')) {
-      return apiUrl.replace(/^https:\/\//, 'wss://');
-    } else if (apiUrl.startsWith('http://')) {
-      return apiUrl.replace(/^http:\/\//, 'ws://');
-    }
+  if (apiUrl.startsWith('https://')) {
+    return apiUrl.replace(/^https:\/\//, 'wss://');
+  } else if (apiUrl.startsWith('http://')) {
+    return apiUrl.replace(/^http:\/\//, 'ws://');
   }
   
   return 'ws://localhost:8000';
