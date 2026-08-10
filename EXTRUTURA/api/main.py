@@ -43,9 +43,21 @@ def require_subscription():
         raise HTTPException(status_code=402, detail=sub.get("message", "Subscrição inativa."))
     return sub
 
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+if cors_origins_env:
+    for o in cors_origins_env.split(","):
+        if o.strip():
+            allowed_origins.append(o.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
