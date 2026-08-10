@@ -46,9 +46,9 @@ export default function Login({ setAuth }) {
     <div className="flex-col items-center justify-center animate-fade-in" style={{ minHeight: '100vh', width: '100%' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '300px', padding: '32px' }}>
         <div className="flex-col items-center gap-4" style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <img src="/logo.png" alt="Whatss Logo" style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 8px 24px rgba(16, 185, 129, 0.4))' }} />
-            <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+            <img src="/logo.png" alt="Whatss Logo" style={{ width: '110px', height: '110px', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(16, 185, 129, 0.4))' }} />
+            <h1 style={{ margin: 0, fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Whatss
             </h1>
           </div>

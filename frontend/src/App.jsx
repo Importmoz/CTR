@@ -58,16 +58,16 @@ function ProtectedLayout({ children, setAuth, theme, toggleTheme }) {
       }}>
         <div style={{ 
           fontWeight: '800', 
-          fontSize: '22px', 
+          fontSize: '28px', 
           background: 'linear-gradient(90deg, #60a5fa, #a78bfa)', 
           WebkitBackgroundClip: 'text', 
           WebkitTextFillColor: 'transparent',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '12px',
           letterSpacing: '-0.5px'
         }}>
-          <img src="/logo.png" alt="Whatss Logo" style={{ width: '56px', height: '56px', filter: 'drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3))' }} />
+          <img src="/logo.png" alt="Whatss Logo" style={{ width: '84px', height: '84px', objectFit: 'contain', filter: 'drop-shadow(0 4px 14px rgba(16, 185, 129, 0.4))' }} />
           <span style={{
             background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)',
             WebkitBackgroundClip: 'text',
