@@ -435,7 +435,7 @@ async def start_sending(
 
 # --- ROTAS DE GESTÃO E MONITORAMENTO DAS FILAS ---
 
-@app.post("/webhook/whatchimp/status")
+@app.api_route("/webhook/whatchimp/status", methods=["GET", "POST"])
 async def whatchimp_webhook_status(request: Request):
     try:
         body = await request.body()
