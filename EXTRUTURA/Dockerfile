@@ -31,6 +31,9 @@ COPY . .
 # Expor a porta do servidor FastAPI
 EXPOSE 8000
 
+# Definir volume de dados persistente para a base de dados SQLite (db/ctr_database.db) e sessões
+VOLUME ["/app/db"]
+
 # Variáveis de ambiente
 ENV PYTHONUNBUFFERED=1
 
