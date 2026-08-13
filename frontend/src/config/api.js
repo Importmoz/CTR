@@ -8,12 +8,12 @@ const getApiUrl = () => {
   if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
     url = customUrl.trim().replace(/\/$/, '');
   } else if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // Fallback de produção explícito para HTTP, pois o sslip.io gerado pode não ter HTTPS nativo
-    url = 'http://fsit226mdiud42a8v7eg3w4f.144.91.110.199.sslip.io';
+    // Fallback de produção para o backend no Coolify
+    url = 'https://fsit226mdiud42a8v7eg3w4f.144.91.110.199.sslip.io';
   }
 
-  // Prevenir erros de Conteúdo Misto (Mixed Content): Se a página rodar em HTTPS, o backend DEVE ser chamado via HTTPS
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+  // Se o frontend estiver rodando em HTTPS, garantir que chamadas à API em domínios remotos usem HTTPS para evitar Mixed Content
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
     url = url.replace(/^http:\/\//, 'https://');
   }
 
