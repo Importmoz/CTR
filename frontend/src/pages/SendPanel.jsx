@@ -39,15 +39,13 @@ export default function SendPanel() {
     
     return { allCompleted, hasFailed, hasPending };
   }, [queue, sendMode]);
+
+  const [levantamentoData, setLevantamentoData] = useState({
     data_disp: new Date(),
     time_start: setHours(setMinutes(new Date(), 0), 9),
     time_end: setHours(setMinutes(new Date(), 0), 15),
     valor_taxa_disp: ''
   });
-
-  const [isSending, setIsSending] = useState(false);
-  const [retryingIndex, setRetryingIndex] = useState(null);
-  const [activeView, setActiveView] = useState('envio');
 
   useEffect(() => {
     fetchSessions();
