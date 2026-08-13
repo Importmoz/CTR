@@ -8,11 +8,11 @@ const getApiUrl = () => {
   if (customUrl && typeof customUrl === 'string' && customUrl.trim() !== '') {
     url = customUrl.trim().replace(/\/$/, '');
   } else if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // Fallback de produção para o backend no Coolify
-    url = 'https://fsit226mdiud42a8v7eg3w4f.144.91.110.199.sslip.io';
+    // Fallback oficial de produção para o domínio da API do Backend
+    url = 'https://api.mycloudspaces.com';
   }
 
-  // Se o frontend estiver rodando em HTTPS, garantir que chamadas à API em domínios remotos usem HTTPS para evitar Mixed Content
+  // Se o frontend estiver rodando em HTTPS, garantir que chamadas à API usem HTTPS
   if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
     url = url.replace(/^http:\/\//, 'https://');
   }
