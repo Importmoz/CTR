@@ -308,16 +308,29 @@ def get_settings():
             res[k] = val
     return res
 
+import urllib.parse
+
+def _get_clean_redirect_uri(request: Request) -> str:
+    raw_origin = request.headers.get("origin") or request.headers.get("referer", "")
+    if raw_origin:
+        try:
+            parsed = urllib.parse.urlparse(raw_origin)
+            base = f"{parsed.scheme}://{parsed.netloc}"
+            if base and "http" in base:
+                return f"{base}/api/google/auth/callback"
+        except Exception:
+            pass
+    return "https://whatss.mycloudspaces.com/api/google/auth/callback"
+
 @app.get("/google/auth-url")
 def google_auth_url(request: Request):
     try:
         from api.google_drive import get_google_flow
-        origin = request.headers.get("origin") or request.headers.get("referer", "").rstrip("/")
-        redirect_uri = f"{origin}/api/google/auth/callback" if origin else None
+        redirect_uri = _get_clean_redirect_uri(request)
         
         flow = get_google_flow(redirect_uri)
         if not flow:
-            return {"success": False, "message": "Credenciais do Google não encontradas! Configura as variáveis GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas Variáveis de Ambiente do Backend no Coolify."}
+            return {"success": False, "message": "Credenciais do Google não encontradas!"}
         
         auth_url, _ = flow.authorization_url(
             access_type='offline',
@@ -326,6 +339,7 @@ def google_auth_url(request: Request):
         )
         return {"success": True, "url": auth_url, "code_verifier": getattr(flow, 'code_verifier', '')}
     except Exception as e:
+        logger.error(f"Erro ao gerar URL do Google Auth: {e}")
         return {"success": False, "message": str(e)}
 
 @app.get("/subscription/status")
@@ -348,8 +362,7 @@ class GoogleCallbackRequest(BaseModel):
 def google_callback(req: GoogleCallbackRequest, request: Request):
     try:
         from api.google_drive import get_google_flow
-        origin = request.headers.get("origin") or request.headers.get("referer", "").rstrip("/")
-        redirect_uri = f"{origin}/api/google/auth/callback" if origin else None
+        redirect_uri = _get_clean_redirect_uri(request)
         
         flow = get_google_flow(redirect_uri)
         if not flow:

@@ -38,7 +38,7 @@ def get_client_secrets_file():
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
     if client_id and client_secret:
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://m447cyfq0dvffd1xwstwi1ca.144.91.110.199.sslip.io/api/google/auth/callback")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "https://whatss.mycloudspaces.com/api/google/auth/callback")
         oauth_data = {
             "web": {
                 "client_id": client_id,
@@ -47,7 +47,11 @@ def get_client_secrets_file():
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                 "client_secret": client_secret,
-                "redirect_uris": [redirect_uri, "http://localhost:5173/api/google/auth/callback"]
+                "redirect_uris": [
+                    redirect_uri,
+                    "https://whatss.mycloudspaces.com/api/google/auth/callback",
+                    "http://localhost:5173/api/google/auth/callback"
+                ]
             }
         }
         try:
