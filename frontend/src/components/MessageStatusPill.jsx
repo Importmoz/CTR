@@ -26,7 +26,9 @@ export const MessageStatusPill = ({ status, wa_message_id, currentError }) => {
   }
 
   return (
-    <span style={{
+    <span 
+      title={currentError || ''}
+      style={{
       padding: '4px 10px', 
       borderRadius: '12px', 
       fontSize: '11px', 
@@ -38,12 +40,12 @@ export const MessageStatusPill = ({ status, wa_message_id, currentError }) => {
       textAlign: 'center',
       background: bg, 
       color: color, 
-      border: border
+      border: border,
+      cursor: currentError ? 'help' : 'default'
     }}>
       <span>
         {realStatus} {realStatus === 'Lido' && <CheckCircle2 size={10} style={{display:'inline', marginLeft:'2px'}}/>}
       </span>
-      {currentError && <div style={{ fontSize: '10px', marginTop: '2px', color: 'var(--danger)' }}>{currentError}</div>}
     </span>
   );
 };
