@@ -18,13 +18,13 @@ def upload_whatchimp_media(api_token, phone_number_id, image_path):
     try:
         with open(image_path, 'rb') as f:
             files = [('media_file', (os.path.basename(image_path), f, 'image/png'))]
-            scraper = cloudscraper.create_scraper()
-            response = scraper.post(url, headers=headers, data=payload, files=files, timeout=30)
-            try:
-                result = response.json()
-            except Exception as json_err:
-                logger.error(f"Upload falhou. Code: {response.status_code}, Body: {response.text}")
-                return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+            with cloudscraper.create_scraper() as scraper:
+                response = scraper.post(url, headers=headers, data=payload, files=files, timeout=30)
+                try:
+                    result = response.json()
+                except Exception as json_err:
+                    logger.error(f"Upload falhou. Code: {response.status_code}, Body: {response.text}")
+                    return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
                 
             if str(result.get("status")) != "1":
                 logger.error(f"Upload falhou: {result}")
@@ -109,13 +109,13 @@ def send_whatchimp_template(api_token, phone_number_id, phone_number, template_i
     }
     
     try:
-        scraper = cloudscraper.create_scraper()
-        response = scraper.post(url, headers=headers, data=payload, timeout=30)
-        try:
-            result = response.json()
-        except Exception as json_err:
-            logger.error(f"Template falhou. Code: {response.status_code}, Body: {response.text}")
-            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+        with cloudscraper.create_scraper() as scraper:
+            response = scraper.post(url, headers=headers, data=payload, timeout=30)
+            try:
+                result = response.json()
+            except Exception as json_err:
+                logger.error(f"Template falhou. Code: {response.status_code}, Body: {response.text}")
+                return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
             
         if str(result.get("status")) != "1":
             logger.error(f"Template falhou: {result}")
@@ -152,13 +152,13 @@ def get_whatchimp_conversation(api_token, phone_number_id, phone_number, limit=5
     }
     
     try:
-        scraper = cloudscraper.create_scraper()
-        response = scraper.post(url, headers=headers, data=payload, timeout=30)
-        try:
-            result = response.json()
-        except Exception as json_err:
-            logger.error(f"Fetch conversation falhou. Code: {response.status_code}, Body: {response.text}")
-            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+        with cloudscraper.create_scraper() as scraper:
+            response = scraper.post(url, headers=headers, data=payload, timeout=30)
+            try:
+                result = response.json()
+            except Exception as json_err:
+                logger.error(f"Fetch conversation falhou. Code: {response.status_code}, Body: {response.text}")
+                return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
             
         return result
     except Exception as e:
@@ -178,14 +178,14 @@ def get_whatchimp_message_status(api_token, wa_message_id):
     }
     
     try:
-        scraper = cloudscraper.create_scraper()
-        response = scraper.post(url, headers=headers, data=payload, timeout=30)
-        try:
-            result = response.json()
-            return result
-        except Exception as json_err:
-            logger.error(f"Erro ao analisar JSON do status da mensagem. Code: {response.status_code}, Body: {response.text}")
-            return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
+        with cloudscraper.create_scraper() as scraper:
+            response = scraper.post(url, headers=headers, data=payload, timeout=30)
+            try:
+                result = response.json()
+                return result
+            except Exception as json_err:
+                logger.error(f"Erro ao analisar JSON do status da mensagem. Code: {response.status_code}, Body: {response.text}")
+                return {"status": "0", "message": f"Non-JSON response: {response.text[:100]}"}
             
     except Exception as e:
         logger.error(f"Erro de exceção ao buscar status da mensagem: {e}")
