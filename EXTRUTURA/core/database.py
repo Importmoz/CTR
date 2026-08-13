@@ -142,6 +142,64 @@ def delete_session(id_ctr):
         logger.error(f"Error deleting session {id_ctr}: {e}")
         return False
 
+def update_message_status_from_webhook(wa_message_id, new_status):
+    """
+    Pesquisa nas últimas sessões pelo wa_message_id e atualiza o estado para o new_status.
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        # Buscar as últimas 50 sessões (são as mais propensas a receber updates recentes)
+        cursor.execute("SELECT id_ctr, queue_data_json FROM sessions ORDER BY updated_at DESC LIMIT 50")
+        rows = cursor.fetchall()
+        
+        updated = False
+        target_id_ctr = None
+        target_queue_json = None
+        
+        for row in rows:
+            id_ctr = row[0]
+            try:
+                queue = json.loads(row[1]) if row[1] else []
+            except Exception:
+                continue
+                
+            for item in queue:
+                # Pode ser Normal ou Levantamento
+                if str(item.get("wa_message_id")) == str(wa_message_id):
+                    # Encontrou o alvo no modo Normal
+                    if new_status.lower() == 'read': item['status'] = 'Lido'
+                    elif new_status.lower() == 'delivered': item['status'] = 'Entregue'
+                    elif new_status.lower() == 'failed': item['status'] = 'Falhou'
+                    updated = True
+                
+                if str(item.get("wa_message_id_levantamento")) == str(wa_message_id):
+                    # Encontrou o alvo no modo Levantamento
+                    if new_status.lower() == 'read': item['status_levantamento'] = 'Lido'
+                    elif new_status.lower() == 'delivered': item['status_levantamento'] = 'Entregue'
+                    elif new_status.lower() == 'failed': item['status_levantamento'] = 'Falhou'
+                    updated = True
+                    
+            if updated:
+                target_id_ctr = id_ctr
+                target_queue_json = json.dumps(queue, ensure_ascii=False)
+                break
+                
+        if updated and target_id_ctr:
+            cursor.execute("""
+                UPDATE sessions 
+                SET queue_data_json = ?, updated_at = ?
+                WHERE id_ctr = ?
+            """, (target_queue_json, datetime.now(), target_id_ctr))
+            conn.commit()
+            logger.info(f"Estado da mensagem {wa_message_id} atualizado para {new_status} no CTR {target_id_ctr}")
+            
+        conn.close()
+        return updated
+    except Exception as e:
+        logger.error(f"Erro ao processar atualização do webhook: {e}")
+        return False
+
 # --- Configurações / Settings ---
 
 def save_setting(key, value):

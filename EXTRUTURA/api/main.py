@@ -433,14 +433,31 @@ async def start_sending(
 @app.post("/webhook/whatchimp/status")
 async def whatchimp_webhook_status(request: Request):
     try:
-        # Primeiro lemos o payload apenas para registar o formato exacto (diagnóstico)
         body = await request.body()
         payload = body.decode("utf-8")
-        logger.info(f"[WEBHOOK WHATCHIMP RAW] Recebido: {payload}")
+        logger.info(f"[WEBHOOK WHATCHIMP] Recebido: {payload}")
         save_setting("last_whatchimp_webhook", payload)
         
-        # Aqui depois de sabermos o formato, faremos a atualização na base de dados
-        return {"success": True, "message": "Webhook recebido"}
+        import json
+        from core.database import update_message_status_from_webhook
+        
+        data = json.loads(payload)
+        
+        # A API do Whatchimp pode mandar diretamente ou dentro de um objeto "data"
+        event_data = data.get("data", data)
+        
+        wa_message_id = event_data.get("message_id") or event_data.get("wa_message_id") or data.get("message_id")
+        status = event_data.get("status") or event_data.get("message_status") or data.get("status")
+        
+        if wa_message_id and status:
+            from core.database import update_message_status_from_webhook
+            updated = update_message_status_from_webhook(wa_message_id, status)
+            if updated:
+                logger.info(f"Webhook processado. Msg: {wa_message_id} -> {status}")
+            else:
+                logger.warning(f"Webhook recebido mas mensagem {wa_message_id} não encontrada na BD.")
+                
+        return {"success": True, "message": "Webhook processado"}
     except Exception as e:
         logger.error(f"[WEBHOOK WHATCHIMP ERROR] Erro: {e}")
         return {"success": False, "error": str(e)}
@@ -477,6 +494,7 @@ async def get_send_queue_status():
 async def add_send_queue_job(
     id_ctr: str = Form(...),
     send_mode: str = Form(...),
+    only_failed: str = Form("false"),
     data_disp: str = Form(""),
     horario_disp: str = Form(""),
     valor_taxa_disp: str = Form("")
@@ -484,7 +502,8 @@ async def add_send_queue_job(
     params_dict = {
         "data_disp": data_disp,
         "horario_disp": horario_disp,
-        "valor_taxa_disp": valor_taxa_disp
+        "valor_taxa_disp": valor_taxa_disp,
+        "only_failed": only_failed.lower() == "true"
     }
     ts = int(time.time())
     job_id = f"send_{id_ctr}_{ts}_{uuid.uuid4().hex[:4]}"

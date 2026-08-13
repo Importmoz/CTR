@@ -147,7 +147,8 @@ class QueueManager:
                         id_ctr, send_mode,
                         params.get("data_disp", ""),
                         params.get("horario_disp", ""),
-                        params.get("valor_taxa_disp", "")
+                        params.get("valor_taxa_disp", ""),
+                        params.get("only_failed", False)
                     )
 
                     update_sending_job_status(job_id, "completed")
@@ -158,7 +159,7 @@ class QueueManager:
                 logger.error(f"Erro no loop de envio: {e}")
                 await asyncio.sleep(5)
 
-    def execute_sender_sync(self, id_ctr, send_mode, data_disp="", horario_disp="", valor_taxa_disp=""):
+    def execute_sender_sync(self, id_ctr, send_mode, data_disp="", horario_disp="", valor_taxa_disp="", only_failed=False):
         queue = load_session(id_ctr)
         if not queue:
             return
@@ -184,7 +185,21 @@ class QueueManager:
                     break
             
             curr_status = item.get('status_levantamento', 'Pendente') if send_mode == 'levantamento' else item.get('status', 'Pendente')
-            if curr_status == "Pendente" or curr_status == "Erro":
+            
+            # Se a mensagem já foi enviada com sucesso, não a voltamos a enviar
+            status_lower = curr_status.lower()
+            is_completed = 'enviado' in status_lower or 'lido' in status_lower or 'entregue' in status_lower or 'sent' in status_lower
+            is_failed = 'erro' in status_lower or 'falhou' in status_lower
+            
+            should_send = False
+            if only_failed:
+                if is_failed:
+                    should_send = True
+            else:
+                if not is_completed:
+                    should_send = True
+
+            if should_send:
                 self._send_item_logic(item, id_ctr, send_mode, opt_wc_token, opt_wc_phone, template_ids, data_disp, horario_disp, valor_taxa_disp)
                 # Salvar na base de dados apenas a cada 5 mensagens, para evitar I/O bottleneck
                 if i % 5 == 0:

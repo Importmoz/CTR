@@ -13,9 +13,32 @@ export default function SendPanel() {
   const [loading, setLoading] = useState(false);
   const [sendMode, setSendMode] = useState('normal');
   const [isModeOpen, setIsModeOpen] = useState(false);
-  const [sendingJobs, setSendingJobs] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const [retryingIndex, setRetryingIndex] = useState(null);
+  const [activeView, setActiveView] = useState('envio');
 
-  const [levantamentoData, setLevantamentoData] = useState({
+  // Computed properties for queue status
+  const queueStatus = useMemo(() => {
+    let allCompleted = true;
+    let hasFailed = false;
+    let hasPending = false;
+    
+    if (!queue || queue.length === 0) return { allCompleted: false, hasFailed: false, hasPending: false };
+
+    queue.forEach(item => {
+      const st = sendMode === 'levantamento' ? (item.status_levantamento || '') : (item.status || '');
+      const statusLower = st.toLowerCase();
+      
+      const isCompleted = statusLower.includes('enviado') || statusLower.includes('entregue') || statusLower.includes('lido') || statusLower.includes('sent');
+      const isFailed = statusLower.includes('erro') || statusLower.includes('falhou');
+      
+      if (isFailed) hasFailed = true;
+      if (!isCompleted && !isFailed) hasPending = true;
+      if (!isCompleted) allCompleted = false;
+    });
+    
+    return { allCompleted, hasFailed, hasPending };
+  }, [queue, sendMode]);
     data_disp: new Date(),
     time_start: setHours(setMinutes(new Date(), 0), 9),
     time_end: setHours(setMinutes(new Date(), 0), 15),
@@ -159,7 +182,7 @@ export default function SendPanel() {
     return () => clearInterval(interval);
   }, [selectedSession]);
 
-  const handleStartSend = async () => {
+  const handleStartSend = async (isRetryFailed = false) => {
     if (!selectedSession) return;
     if (sendMode === 'levantamento' && (!levantamentoData.data_disp ||!levantamentoData.time_start ||!levantamentoData.time_end ||!levantamentoData.valor_taxa_disp)) {
       alert("Para o modo Levantamento, preencha a Data, Horário e Valor da Taxa.");
@@ -169,6 +192,9 @@ export default function SendPanel() {
     const formData = new FormData();
     formData.append('id_ctr', selectedSession);
     formData.append('send_mode', sendMode);
+    // Para identificar se é um reenvio de falhados
+    formData.append('only_failed', isRetryFailed ? 'true' : 'false');
+    
     if (sendMode === 'levantamento') {
       const formattedDate = levantamentoData.data_disp.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric' });
       const finalDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
@@ -348,14 +374,20 @@ export default function SendPanel() {
                       )}
                     </div>
                   </div>
-                  {queue.some(it => (sendMode === 'levantamento' ? it.status_levantamento : it.status)?.includes('Erro')) && (
-                    <button onClick={handleStartSend} disabled={isSending} className="btn" style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger)', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer' }} title="Adicionar de volta à fila para re-tentar o envio a todos os que falharam">
-                      <RefreshCw size={16} /> Reenviar Falhados à Fila
+                  {queueStatus.hasFailed && (
+                    <button onClick={() => handleStartSend(true)} disabled={isSending} className="btn" style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger)', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer' }} title="Adicionar de volta à fila apenas quem falhou">
+                      <RefreshCw size={16} /> Reenviar Falhados
                     </button>
                   )}
-                  <button onClick={handleStartSend} disabled={isSending} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-                    <Play size={16} /> {isSending? 'A agendar...' : '+ Adicionar à Fila de Envio'}
-                  </button>
+                  {queueStatus.allCompleted ? (
+                    <button disabled className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', opacity: 0.6, cursor: 'not-allowed' }}>
+                      <CheckCircle2 size={16} /> Todos Enviados ✅
+                    </button>
+                  ) : (
+                    <button onClick={() => handleStartSend(false)} disabled={isSending} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+                      <Play size={16} /> {isSending? 'A agendar...' : '+ Adicionar à Fila de Envio'}
+                    </button>
+                  )}
                 </div>
               </div>
 
