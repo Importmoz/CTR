@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle, CreditCard, Calendar, User, Zap, Settings as SettingsIcon } from 'lucide-react';
+import { Save, AlertTriangle, MessageSquare, Truck, BookOpen, Building2, Banknote, Edit3, CheckCircle, CreditCard, Calendar, User, Zap, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { API_BASE, fetchApi } from '../config/api';
 
 export default function Settings() {
@@ -20,6 +20,7 @@ export default function Settings() {
   const [editableFields, setEditableFields] = useState({});
   const [subStatus, setSubStatus] = useState(null);
   const [activeTab, setActiveTab] = useState('geral');
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -287,21 +288,34 @@ export default function Settings() {
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-main)' }}>Ainda não autorizaste a aplicação a aceder ao teu Google Drive.</p>
                 <button 
                   className="btn btn-primary" 
-                  style={{ alignSelf: 'flex-start' }}
+                  style={{ alignSelf: 'flex-start', minWidth: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  disabled={loadingGoogle}
                   onClick={async () => {
-                    const res = await fetchApi(`${API_BASE}/google/auth-url`);
-                    const data = await res.json();
-                    if (data.success) {
-                      if (data.code_verifier) {
-                        localStorage.setItem('google_code_verifier', data.code_verifier);
+                    setLoadingGoogle(true);
+                    setStatusMsg({ text: '', type: '' });
+                    try {
+                      const res = await fetchApi(`${API_BASE}/google/auth-url`);
+                      const data = await res.json();
+                      if (data.success && data.url) {
+                        if (data.code_verifier) {
+                          localStorage.setItem('google_code_verifier', data.code_verifier);
+                        }
+                        window.location.href = data.url;
+                      } else {
+                        setStatusMsg({ 
+                          text: data.message || 'Erro ao comunicar com o Google. Certifica-te que as variáveis GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET estão configuradas no Coolify.', 
+                          type: 'error' 
+                        });
                       }
-                      window.location.href = data.url;
-                    } else {
-                      setStatusMsg({ text: data.message || 'Erro ao gerar URL. Verifica se o ficheiro google-oauth.json está na raiz.', type: 'error' });
+                    } catch (err) {
+                      setStatusMsg({ text: 'Erro de comunicação ao obter URL de autenticação do Google.', type: 'error' });
+                    } finally {
+                      setLoadingGoogle(false);
                     }
                   }}
                 >
-                  Iniciar Sessão no Google
+                  {loadingGoogle ? <Loader2 size={16} className="spin-animation" style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                  {loadingGoogle ? 'A redirecionar...' : 'Iniciar Sessão no Google'}
                 </button>
               </div>
             )}
