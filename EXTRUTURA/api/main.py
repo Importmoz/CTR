@@ -15,6 +15,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from core.logger import get_logger
+logger = get_logger("API")
+
 from api.services import process_excel_bg
 from core.database import (
     get_all_sessions, load_session, get_setting, save_setting, init_db, delete_session, save_session, get_general_metrics,
@@ -427,6 +430,26 @@ async def start_sending(
 
 # --- ROTAS DE GESTÃO E MONITORAMENTO DAS FILAS ---
 
+@app.post("/webhook/whatchimp/status")
+async def whatchimp_webhook_status(request: Request):
+    try:
+        # Primeiro lemos o payload apenas para registar o formato exacto (diagnóstico)
+        body = await request.body()
+        payload = body.decode("utf-8")
+        logger.info(f"[WEBHOOK WHATCHIMP RAW] Recebido: {payload}")
+        save_setting("last_whatchimp_webhook", payload)
+        
+        # Aqui depois de sabermos o formato, faremos a atualização na base de dados
+        return {"success": True, "message": "Webhook recebido"}
+    except Exception as e:
+        logger.error(f"[WEBHOOK WHATCHIMP ERROR] Erro: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.get("/webhook/whatchimp/last")
+def get_last_webhook():
+    payload = get_setting("last_whatchimp_webhook", "Nenhum webhook recebido ainda.")
+    return {"success": True, "payload": payload}
+
 @app.get("/conversion-queue/status", dependencies=[Depends(get_current_user)])
 async def get_conversion_queue_status():
     jobs = get_all_conversion_jobs()
@@ -534,3 +557,4 @@ def get_whatsapp_status(wa_message_id: str):
     except Exception as e:
         logger.error(f"Erro ao buscar status WhatChimp: {e}")
         return {"success": False, "message": str(e)}
+
