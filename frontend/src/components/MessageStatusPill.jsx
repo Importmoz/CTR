@@ -19,7 +19,7 @@ export const MessageStatusPill = ({ status, wa_message_id, currentError }) => {
     bg = 'var(--success-bg)';
     color = 'var(--success)';
     border = '1px solid transparent';
-  } else if (realStatus === 'Falhou' || (realStatus && realStatus.includes('Erro'))) {
+  } else if (realStatus === 'Falhou' || (realStatus && String(realStatus).includes('Erro'))) {
     bg = 'var(--danger-bg)';
     color = 'var(--danger)';
     border = '1px solid transparent';

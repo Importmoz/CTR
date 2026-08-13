@@ -27,7 +27,7 @@ export default function SendPanel() {
 
     queue.forEach(item => {
       const st = sendMode === 'levantamento' ? (item.status_levantamento || '') : (item.status || '');
-      const statusLower = st.toLowerCase();
+      const statusLower = String(st).toLowerCase();
       
       const isCompleted = statusLower.includes('enviado') || statusLower.includes('entregue') || statusLower.includes('lido') || statusLower.includes('sent');
       const isFailed = statusLower.includes('erro') || statusLower.includes('falhou');
