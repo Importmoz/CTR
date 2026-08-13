@@ -16,6 +16,7 @@ export default function SendPanel() {
   const [isSending, setIsSending] = useState(false);
   const [retryingIndex, setRetryingIndex] = useState(null);
   const [activeView, setActiveView] = useState('envio');
+  const [sendingJobs, setSendingJobs] = useState([]);
 
   // Computed properties for queue status
   const queueStatus = useMemo(() => {
