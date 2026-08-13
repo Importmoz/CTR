@@ -178,13 +178,20 @@ class QueueManager:
         }
         
         for i, item in enumerate(queue):
-            if get_setting(f"stop_{id_ctr}", "false") == "true":
-                break
+            # Ler a base de dados apenas a cada 5 iterações para evitar lockups
+            if i % 5 == 0:
+                if get_setting(f"stop_{id_ctr}", "false") == "true":
+                    break
             
             curr_status = item.get('status_levantamento', 'Pendente') if send_mode == 'levantamento' else item.get('status', 'Pendente')
             if curr_status == "Pendente" or curr_status == "Erro":
                 self._send_item_logic(item, id_ctr, send_mode, opt_wc_token, opt_wc_phone, template_ids, data_disp, horario_disp, valor_taxa_disp)
-                save_session(id_ctr, queue)
+                # Salvar na base de dados apenas a cada 5 mensagens, para evitar I/O bottleneck
+                if i % 5 == 0:
+                    save_session(id_ctr, queue)
+                    
+        # Garantir que a sessão é gravada no fim do loop
+        save_session(id_ctr, queue)
 
     def _send_item_logic(self, item, id_ctr, send_mode, opt_wc_token, opt_wc_phone, template_ids, data_disp, horario_disp, valor_taxa_disp):
         phones = extract_phone_numbers(item['phone'])

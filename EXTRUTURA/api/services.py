@@ -343,25 +343,7 @@ def _process_excel_sync(df, id_ctr, origin_sel, dest_sel, loading_date, expected
             table_bank_info = None if combined_total == 0 else bank_info
             html_table = generate_html_table(client_orders, container_number, table_bank_info)
             img_filename = f"{safe_list_code}_{id_code_str}-{id_ctr}.png"
-            hti.output_path = info_dir
-            
-            # Executar html2image de forma sincrona mas evitar travar o event loop
-            hti.screenshot(html_str=html_table, save_as=img_filename, size=(1200, 2000))
-            
             img_path = os.path.join(info_dir, img_filename)
-            try:
-                with Image.open(img_path) as img:
-                    img_rgb = img.convert("RGB")
-                    bg = Image.new(img_rgb.mode, img_rgb.size, img_rgb.getpixel((0,0)))
-                    diff = ImageChops.difference(img_rgb, bg)
-                    bbox = diff.getbbox()
-                    if bbox:
-                        margin = 15
-                        left, top, right, bottom = bbox
-                        cropped = img.crop((max(0, left-margin), max(0, top-margin), min(img.width, right+margin), min(img.height, bottom+margin)))
-                        cropped.save(img_path)
-                        cropped.save(os.path.join(client_dir, img_filename))
-            except: pass
             
             queue.append({
                 "list_code": str(list_code),
@@ -369,6 +351,9 @@ def _process_excel_sync(df, id_ctr, origin_sel, dest_sel, loading_date, expected
                 "name": name,
                 "phone": str(phone).replace(".0", ""),
                 "img_path": img_path,
+                "client_dir": client_dir,
+                "img_filename": img_filename,
+                "html_table": html_table,
                 "msg": msg,
                 "template_data": {
                     "templateVariable-NomeDoCliente-1": name,
@@ -391,8 +376,47 @@ def _process_excel_sync(df, id_ctr, origin_sel, dest_sel, loading_date, expected
                 "error": ""
             })
             
-            percent = 30 + int(70 * (idx + 1) / total_clients)
-            progress_callback(percent, 100, f"Processado {idx + 1} de {total_clients}: {name}")
+            percent = 30 + int(20 * (idx + 1) / total_clients)
+            progress_callback(percent, 100, f"Preparando {idx + 1} de {total_clients}: {name}")
+            
+        progress_callback(50, 100, "Renderizando imagens em lote (isto pode demorar alguns segundos)...")
+        # --- Otimização: Renderizar todas as imagens em Lote (Batching) ---
+        batch_size = 50
+        for i in range(0, len(queue), batch_size):
+            batch = queue[i:i+batch_size]
+            html_list = [item["html_table"] for item in batch]
+            filename_list = [item["img_filename"] for item in batch]
+            
+            hti.output_path = info_dir
+            try:
+                hti.screenshot(html_str=html_list, save_as=filename_list, size=(1200, 2000))
+            except Exception as e:
+                get_logger("BackgroundProcessor").error(f"Erro no Html2Image batch: {e}")
+                
+            # Processar crop
+            for item in batch:
+                try:
+                    with Image.open(item["img_path"]) as img:
+                        img_rgb = img.convert("RGB")
+                        bg = Image.new(img_rgb.mode, img_rgb.size, img_rgb.getpixel((0,0)))
+                        diff = ImageChops.difference(img_rgb, bg)
+                        bbox = diff.getbbox()
+                        if bbox:
+                            margin = 15
+                            left, top, right, bottom = bbox
+                            cropped = img.crop((max(0, left-margin), max(0, top-margin), min(img.width, right+margin), min(img.height, bottom+margin)))
+                            cropped.save(item["img_path"])
+                            cropped.save(os.path.join(item["client_dir"], item["img_filename"]))
+                except Exception as e:
+                    pass
+                
+                # Remover chaves temporárias para não inchar o JSON
+                item.pop("html_table", None)
+                item.pop("client_dir", None)
+                item.pop("img_filename", None)
+                
+            percent = 50 + int(45 * min(i + batch_size, len(queue)) / len(queue))
+            progress_callback(percent, 100, f"Renderizadas {min(i + batch_size, len(queue))} de {len(queue)} imagens...")
             
         save_session(id_ctr, queue)
         
