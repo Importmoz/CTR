@@ -181,24 +181,85 @@ export default function SendPanel() {
     return () => clearInterval(interval);
   }, [selectedSession]);
 
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState(() => new Date());
+  const [scheduledTime, setScheduledTime] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return d;
+  });
+
+  const getCombinedScheduledDateTime = () => {
+    const d = new Date(scheduledDate || new Date());
+    const t = new Date(scheduledTime || new Date());
+    d.setHours(t.getHours(), t.getMinutes(), 0, 0);
+    return d;
+  };
+
+  const applyPresetSchedule = (preset) => {
+    setIsScheduled(true);
+    const now = new Date();
+    if (preset === '30m') {
+      const d = new Date(now.getTime() + 30 * 60000);
+      setScheduledDate(d);
+      setScheduledTime(d);
+    } else if (preset === '1h') {
+      const d = new Date(now.getTime() + 60 * 60000);
+      setScheduledDate(d);
+      setScheduledTime(d);
+    } else if (preset === 'tomorrow_9am') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+      setScheduledDate(d);
+      setScheduledTime(d);
+    } else if (preset === 'tomorrow_2pm') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(14, 0, 0, 0);
+      setScheduledDate(d);
+      setScheduledTime(d);
+    }
+  };
+
   const handleStartSend = async (isRetryFailed = false) => {
     if (!selectedSession) return;
-    if (sendMode === 'levantamento' && (!levantamentoData.data_disp ||!levantamentoData.time_start ||!levantamentoData.time_end ||!levantamentoData.valor_taxa_disp)) {
+    if (sendMode === 'levantamento' && (!levantamentoData.data_disp || !levantamentoData.time_start || !levantamentoData.time_end || !levantamentoData.valor_taxa_disp)) {
       alert("Para o modo Levantamento, preencha a Data, Horário e Valor da Taxa.");
       return;
     }
+    
+    const combinedSched = getCombinedScheduledDateTime();
+    if (isScheduled && combinedSched <= new Date()) {
+      alert("A data e hora de agendamento devem ser no futuro.");
+      return;
+    }
+
     setIsSending(true);
     const formData = new FormData();
     formData.append('id_ctr', selectedSession);
     formData.append('send_mode', sendMode);
-    // Para identificar se é um reenvio de falhados
     formData.append('only_failed', isRetryFailed ? 'true' : 'false');
     
+    if (isScheduled) {
+      const year = combinedSched.getFullYear();
+      const month = String(combinedSched.getMonth() + 1).padStart(2, '0');
+      const day = String(combinedSched.getDate()).padStart(2, '0');
+      const hours = String(combinedSched.getHours()).padStart(2, '0');
+      const mins = String(combinedSched.getMinutes()).padStart(2, '0');
+      const formattedSched = `${year}-${month}-${day} ${hours}:${mins}`;
+      
+      formData.append('is_scheduled', 'true');
+      formData.append('scheduled_at', formattedSched);
+    } else {
+      formData.append('is_scheduled', 'false');
+    }
+
     if (sendMode === 'levantamento') {
       const formattedDate = levantamentoData.data_disp.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric' });
       const finalDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
       const formatTime = (dateObj) => {
-        if (!dateObj ||!(dateObj instanceof Date)) return '00:00';
+        if (!dateObj || !(dateObj instanceof Date)) return '00:00';
         return dateObj.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
       };
       const horario_disp = `${formatTime(levantamentoData.time_start)} - ${formatTime(levantamentoData.time_end)}`;
@@ -208,11 +269,16 @@ export default function SendPanel() {
     }
     try {
       const res = await fetchApi(`${API_BASE}/send-queue/add`, { method: 'POST', body: formData });
-      if (res.ok) {
-        alert("✅ Sessão adicionada à Fila de Envio do WhatsApp!\nO sistema processará os CTRs em ordem na fila.");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.status === 'scheduled') {
+          alert(`📅 Envio agendado com sucesso para ${data.scheduled_at}!\nO disparo iniciará automaticamente na data e hora marcadas.`);
+        } else {
+          alert("✅ Sessão adicionada à Fila de Envio do WhatsApp!\nO sistema processará os CTRs em ordem na fila.");
+        }
         fetchSendingQueue();
       } else {
-        alert("Erro ao adicionar envio à fila.");
+        alert(data.message || "Erro ao adicionar envio à fila.");
       }
     } catch (err) {
       console.error(err);
@@ -453,9 +519,85 @@ export default function SendPanel() {
                       />
                     </div>
                   </div>
-
                 </div>
               )}
+
+              <div className="flex-row gap-4 mb-6 animate-fade-in" style={{ background: 'var(--glass-bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', flexWrap: 'wrap', position: 'relative', zIndex: 10, alignItems: 'flex-end' }}>
+                <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: isScheduled ? '8px' : '0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: '600', color: !isScheduled ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="radio" 
+                        name="schedule_type" 
+                        checked={!isScheduled} 
+                        onChange={() => setIsScheduled(false)} 
+                        style={{ accentColor: 'var(--primary)' }}
+                      />
+                      ⚡ Disparo Imediato
+                    </label>
+                    <label style={{ fontSize: '14px', fontWeight: '600', color: isScheduled ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="radio" 
+                        name="schedule_type" 
+                        checked={isScheduled} 
+                        onChange={() => setIsScheduled(true)} 
+                        style={{ accentColor: 'var(--primary)' }}
+                      />
+                      📅 Agendar para Data e Hora Marcada
+                    </label>
+                  </div>
+
+                  {/* Atalhos Rápidos */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Atalhos:</span>
+                    <button type="button" onClick={() => applyPresetSchedule('30m')} className="btn" style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', background: 'var(--glass-bg-hover)' }}>+30 Min</button>
+                    <button type="button" onClick={() => applyPresetSchedule('1h')} className="btn" style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', background: 'var(--glass-bg-hover)' }}>+1 Hora</button>
+                    <button type="button" onClick={() => applyPresetSchedule('tomorrow_9am')} className="btn" style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', background: 'var(--glass-bg-hover)' }}>Amanhã 09:00</button>
+                    <button type="button" onClick={() => applyPresetSchedule('tomorrow_2pm')} className="btn" style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', background: 'var(--glass-bg-hover)' }}>Amanhã 14:00</button>
+                  </div>
+                </div>
+
+                {isScheduled && (
+                  <>
+                    <div style={{ width: '125px' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Data de Disparo</label>
+                      <div className="input-wrapper">
+                        <Calendar size={18} color="var(--primary)" />
+                        <DatePicker
+                          selected={scheduledDate}
+                          onChange={(date) => setScheduledDate(date)}
+                          className="transparent-input"
+                          dateFormat="dd/MM/yyyy"
+                          minDate={new Date()}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ width: '110px' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>Hora de Disparo</label>
+                      <div className="input-wrapper">
+                        <Clock size={18} color="var(--primary)" />
+                        <DatePicker
+                          selected={scheduledTime}
+                          onChange={(date) => setScheduledTime(date)}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={15}
+                          timeCaption="Hora"
+                          dateFormat="HH:mm"
+                          timeFormat="HH:mm"
+                          className="transparent-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginLeft: 'auto', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', color: '#60A5FA', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Calendar size={18} />
+                      O disparo será feito em {getCombinedScheduledDateTime().toLocaleDateString('pt-PT')} às {getCombinedScheduledDateTime().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}.
+                    </div>
+                  </>
+                )}
+              </div>
 
               <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -589,7 +731,22 @@ export default function SendPanel() {
                 </div>
 
                 {/* Right: Status */}
-                <div style={{ width: '120px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                <div style={{ minWidth: '140px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                  {job.status === 'scheduled' && (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <span style={{ color: '#F59E0B', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Calendar size={12} /> Agendado
+                        </span>
+                        {job.scheduled_at && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {job.scheduled_at}
+                          </span>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => removeSendingJob(job.job_id)} style={{ background: 'transparent', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0 }} title="Cancelar Agendamento"><Trash2 size={14} /></button>
+                    </>
+                  )}
                   {job.status === 'queued' && (
                     <>
                       <span style={{ color: '#FBBF24', fontSize: '12px', fontWeight: '500' }}>Na Fila</span>

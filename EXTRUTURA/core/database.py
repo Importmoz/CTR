@@ -60,10 +60,15 @@ def init_db():
                 status TEXT,
                 send_mode TEXT,
                 params_json TEXT,
+                scheduled_at TIMESTAMP,
                 created_at TIMESTAMP,
                 updated_at TIMESTAMP
             )
         """)
+        try:
+            cursor.execute("ALTER TABLE sending_jobs ADD COLUMN scheduled_at TIMESTAMP")
+        except Exception:
+            pass
 
         conn.commit()
         conn.close()
@@ -379,16 +384,16 @@ def delete_conversion_job(job_id):
     except Exception as e:
         logger.error(f"Error deleting conversion job {job_id}: {e}")
 
-def save_sending_job(job_id, id_ctr, status, send_mode, params_dict):
+def save_sending_job(job_id, id_ctr, status, send_mode, params_dict, scheduled_at=None):
     try:
         conn = get_connection()
         cursor = conn.cursor()
         now = datetime.now()
         params_json = json.dumps(params_dict, ensure_ascii=False)
         cursor.execute("""
-            INSERT OR REPLACE INTO sending_jobs (job_id, id_ctr, status, send_mode, params_json, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (job_id, id_ctr, status, send_mode, params_json, now, now))
+            INSERT OR REPLACE INTO sending_jobs (job_id, id_ctr, status, send_mode, params_json, scheduled_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (job_id, id_ctr, status, send_mode, params_json, scheduled_at, now, now))
         conn.commit()
         conn.close()
     except Exception as e:
@@ -410,9 +415,9 @@ def get_all_sending_jobs(status=None):
         conn = get_connection()
         cursor = conn.cursor()
         if status:
-            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at FROM sending_jobs WHERE status = ? ORDER BY created_at ASC", (status,))
+            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at, scheduled_at FROM sending_jobs WHERE status = ? ORDER BY created_at ASC", (status,))
         else:
-            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at FROM sending_jobs ORDER BY created_at ASC")
+            cursor.execute("SELECT job_id, id_ctr, status, send_mode, params_json, created_at, scheduled_at FROM sending_jobs ORDER BY created_at ASC")
         rows = cursor.fetchall()
         conn.close()
         jobs = []
@@ -423,7 +428,8 @@ def get_all_sending_jobs(status=None):
                 "status": r[2],
                 "send_mode": r[3],
                 "params": json.loads(r[4]) if r[4] else {},
-                "created_at": str(r[5])
+                "created_at": str(r[5]),
+                "scheduled_at": str(r[6]) if r[6] else None
             })
         return jobs
     except Exception as e:

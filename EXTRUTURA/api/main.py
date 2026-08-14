@@ -499,7 +499,9 @@ async def add_send_queue_job(
     only_failed: str = Form("false"),
     data_disp: str = Form(""),
     horario_disp: str = Form(""),
-    valor_taxa_disp: str = Form("")
+    valor_taxa_disp: str = Form(""),
+    is_scheduled: str = Form("false"),
+    scheduled_at: str = Form("")
 ):
     params_dict = {
         "data_disp": data_disp,
@@ -509,9 +511,18 @@ async def add_send_queue_job(
     }
     ts = int(time.time())
     job_id = f"send_{id_ctr}_{ts}_{uuid.uuid4().hex[:4]}"
-    save_sending_job(job_id, id_ctr, "queued", send_mode, params_dict)
+    
+    status = "queued"
+    sched_val = None
+    if is_scheduled.lower() == "true" and scheduled_at.strip():
+        status = "scheduled"
+        sched_val = scheduled_at.strip()
+
+    save_sending_job(job_id, id_ctr, status, send_mode, params_dict, scheduled_at=sched_val)
     save_setting(f"stop_{id_ctr}", "false")
-    return {"success": True, "message": "Sessão adicionada à fila de envio", "job_id": job_id}
+    
+    msg = f"Sessão agendada com sucesso para {sched_val}" if status == "scheduled" else "Sessão adicionada à fila de envio"
+    return {"success": True, "message": msg, "job_id": job_id, "status": status, "scheduled_at": sched_val}
 
 @app.post("/send-queue/remove/{job_id}", dependencies=[Depends(get_current_user)])
 async def remove_send_job_endpoint(job_id: str):

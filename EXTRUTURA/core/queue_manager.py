@@ -129,6 +129,28 @@ class QueueManager:
     async def _sending_loop(self):
         while self.sending_worker_running:
             try:
+                # Verificar tarefas com estado "scheduled" (agendadas por data/hora)
+                scheduled_jobs = get_all_sending_jobs("scheduled")
+                now = datetime.now()
+                for job in scheduled_jobs:
+                    sched_str = job.get("scheduled_at")
+                    if sched_str:
+                        try:
+                            clean_str = sched_str.replace("T", " ")
+                            if len(clean_str) == 16:
+                                dt_sched = datetime.strptime(clean_str, "%Y-%m-%d %H:%M")
+                            else:
+                                dt_sched = datetime.strptime(clean_str[:19], "%Y-%m-%d %H:%M:%S")
+                            
+                            if now >= dt_sched:
+                                logger.info(f"[SendingQueue] Tarefa agendada {job['job_id']} atingiu a hora ({sched_str}). A iniciar disparo automaticamente!")
+                                update_sending_job_status(job["job_id"], "queued")
+                        except Exception as parse_err:
+                            logger.error(f"Erro ao analisar data de agendamento '{sched_str}': {parse_err}")
+                            update_sending_job_status(job["job_id"], "queued")
+                    else:
+                        update_sending_job_status(job["job_id"], "queued")
+
                 queued = get_all_sending_jobs("queued")
                 if queued:
                     job = queued[0]
