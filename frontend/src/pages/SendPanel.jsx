@@ -449,8 +449,21 @@ export default function SendPanel() {
                       <CheckCircle2 size={16} /> Todos Enviados ✅
                     </button>
                   ) : (
-                    <button onClick={() => handleStartSend(false)} disabled={isSending} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-                      <Play size={16} /> {isSending? 'A agendar...' : '+ Adicionar à Fila de Envio'}
+                    <button 
+                      onClick={() => handleStartSend(false)} 
+                      disabled={isSending || queueStatus.hasFailed} 
+                      className="btn btn-success" 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        fontWeight: '600',
+                        opacity: (isSending || queueStatus.hasFailed) ? 0.5 : 1,
+                        cursor: (isSending || queueStatus.hasFailed) ? 'not-allowed' : 'pointer'
+                      }}
+                      title={queueStatus.hasFailed ? "Existem envios com falha. Utilize o botão 'Reenviar Falhados'." : "Adicionar à Fila de Envio"}
+                    >
+                      <Play size={16} /> {isSending ? 'A agendar...' : '+ Adicionar à Fila de Envio'}
                     </button>
                   )}
                 </div>
