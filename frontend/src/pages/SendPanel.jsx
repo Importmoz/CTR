@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Play, Calendar, Clock, DollarSign, Send, ChevronDown, List, Trash2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Play, Calendar, Clock, DollarSign, Send, ChevronDown, List, Trash2, CheckCircle2, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { setHours, setMinutes } from 'date-fns';
 import { API_BASE, fetchApi } from '../config/api';
 import { MessageStatusPill } from '../components/MessageStatusPill';
+import ListSkeletonLoader from '../components/ListSkeletonLoader';
 
 export default function SendPanel() {
   const [sessions, setSessions] = useState([]);
@@ -17,6 +18,7 @@ export default function SendPanel() {
   const [retryingIndex, setRetryingIndex] = useState(null);
   const [activeView, setActiveView] = useState('envio');
   const [sendingJobs, setSendingJobs] = useState([]);
+  const [showScheduleCard, setShowScheduleCard] = useState(true);
 
   // Computed properties for queue status
   const queueStatus = useMemo(() => {
@@ -382,12 +384,9 @@ export default function SendPanel() {
         </div>
 
         <div style={{ flex: '3', minWidth: '400px', display: 'flex', flexDirection: 'column', overflow: 'visible', minHeight: 0, height: '100%' }}>
-          {loading? (
-            <div className="flex-col items-center justify-center py-8" style={{ flex: 1 }}>
-              <div className="spinner"></div>
-              <p className="mt-4 text-muted">A carregar...</p>
-            </div>
-          ) : queue.length > 0? (
+          {loading ? (
+            <ListSkeletonLoader count={8} title="A carregar lista de mensagens do CTR..." />
+          ) : queue.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'visible', minHeight: 0 }}>
               <div className="flex-row justify-between items-center flex-wrap gap-4" style={{ marginBottom: '24px' }}>
                 <h3>Mensagens ({queue.length})</h3>
@@ -535,8 +534,42 @@ export default function SendPanel() {
                 </div>
               )}
 
-              <div className="flex-row gap-4 mb-6 animate-fade-in" style={{ background: 'var(--glass-bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', flexWrap: 'wrap', position: 'relative', zIndex: 10, alignItems: 'flex-end' }}>
-                <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: isScheduled ? '8px' : '0' }}>
+              {/* Botão de Mostrar / Ocultar Modo de Disparo */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showScheduleCard ? '12px' : '16px', background: 'var(--glass-bg-subtle)', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Configuração de Disparo:
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary)' }}>
+                    {isScheduled ? `📅 Agendado (${getCombinedScheduledDateTime().toLocaleDateString('pt-PT')} ${getCombinedScheduledDateTime().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })})` : '⚡ Disparo Imediato'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleCard(!showScheduleCard)}
+                  className="btn"
+                  style={{
+                    background: 'var(--glass-bg-hover)',
+                    border: '1px solid var(--glass-border)',
+                    color: 'var(--text-main)',
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                  title={showScheduleCard ? "Ocultar painel de agendamento" : "Mostrar opções de agendamento"}
+                >
+                  {showScheduleCard ? <><EyeOff size={14} /> Ocultar Modo de Disparo</> : <><Eye size={14} /> Ajustar Modo de Disparo</>}
+                </button>
+              </div>
+
+              {showScheduleCard && (
+                <div className="flex-row gap-4 mb-6 animate-fade-in" style={{ background: 'var(--glass-bg-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', flexWrap: 'wrap', position: 'relative', zIndex: 10, alignItems: 'flex-end' }}>
+                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: isScheduled ? '8px' : '0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <label style={{ fontSize: '14px', fontWeight: '600', color: !isScheduled ? 'var(--primary)' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                       <input 
@@ -604,13 +637,14 @@ export default function SendPanel() {
                       </div>
                     </div>
 
-                    <div style={{ marginLeft: 'auto', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', color: '#60A5FA', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ marginLeft: 'auto', background: 'var(--glass-bg-hover)', border: '1px solid var(--glass-border)', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', color: 'var(--primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Calendar size={18} />
                       O disparo será feito em {getCombinedScheduledDateTime().toLocaleDateString('pt-PT')} às {getCombinedScheduledDateTime().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}.
                     </div>
                   </>
                 )}
               </div>
+              )}
 
               <div style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>

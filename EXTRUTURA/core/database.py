@@ -236,7 +236,7 @@ def get_setting(key, default=None):
         return default
 
 def get_general_metrics():
-    """Computes aggregate reporting statistics across all processed sessions"""
+    """Computes aggregate reporting statistics across all processed sessions including WhatsApp read receipts and delivery metrics"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -251,8 +251,11 @@ def get_general_metrics():
         
         total_projects = len(rows)
         total_messages = 0
-        total_success = 0
+        total_sent = 0
+        total_delivered = 0
+        total_read = 0
         total_errors = 0
+        total_pending = 0
         unique_clients = set()
         recent_projects = []
         
@@ -262,42 +265,82 @@ def get_general_metrics():
             except Exception:
                 queue = []
                 
-            proj_total = len(queue)
-            proj_success = 0
-            proj_error = 0
+            proj_total = 0
+            proj_sent = 0
+            proj_delivered = 0
+            proj_read = 0
+            proj_errors = 0
+            proj_pending = 0
             
             for item in queue:
-                total_messages += 1
-                status = str(item.get("status", "")).lower()
-                if "sucesso" in status or "ignorado" in status or "success" in status or "sent" in status:
-                    total_success += 1
-                    proj_success += 1
-                elif "falha" in status or "erro" in status or "sem contacto" in status or "error" in status or "failed" in status:
-                    total_errors += 1
-                    proj_error += 1
-                
                 client_id = item.get("id_code") or item.get("codigo")
                 if client_id:
                     unique_clients.add(str(client_id).strip())
+
+                # Verificar estado normal e levantamento
+                statuses_to_check = []
+                if item.get("status"):
+                    statuses_to_check.append(str(item.get("status")).lower())
+                if item.get("status_levantamento"):
+                    statuses_to_check.append(str(item.get("status_levantamento")).lower())
+                if not statuses_to_check:
+                    statuses_to_check.append("pendente")
+
+                for st in statuses_to_check:
+                    total_messages += 1
+                    proj_total += 1
+                    
+                    if "lido" in st or "read" in st:
+                        total_read += 1
+                        total_delivered += 1
+                        total_sent += 1
+                        proj_read += 1
+                        proj_delivered += 1
+                        proj_sent += 1
+                    elif "entregue" in st or "delivered" in st:
+                        total_delivered += 1
+                        total_sent += 1
+                        proj_delivered += 1
+                        proj_sent += 1
+                    elif "enviado" in st or "sucesso" in st or "success" in st or "sent" in st:
+                        total_sent += 1
+                        proj_sent += 1
+                    elif "falha" in st or "erro" in st or "sem contacto" in st or "error" in st or "failed" in st:
+                        total_errors += 1
+                        proj_errors += 1
+                    else:
+                        total_pending += 1
+                        proj_pending += 1
             
             if idx < 100:
                 recent_projects.append({
                     "id_ctr": id_ctr,
                     "updated_at": str(updated_at)[:16].replace("T", " "),
                     "total": proj_total,
-                    "success": proj_success,
-                    "error": proj_error
+                    "sent": proj_sent,
+                    "delivered": proj_delivered,
+                    "read": proj_read,
+                    "success": proj_sent,
+                    "error": proj_errors,
+                    "pending": proj_pending
                 })
                 
-        success_rate = round((total_success / total_messages * 100), 1) if total_messages > 0 else 0.0
+        delivery_rate = round((total_delivered / total_messages * 100), 1) if total_messages > 0 else 0.0
+        read_rate = round((total_read / total_messages * 100), 1) if total_messages > 0 else 0.0
+        success_rate = round((total_sent / total_messages * 100), 1) if total_messages > 0 else 0.0
         
         return {
             "total_projects": total_projects,
             "total_messages": total_messages,
-            "total_success": total_success,
+            "total_sent": total_sent,
+            "total_delivered": total_delivered,
+            "total_read": total_read,
+            "total_success": total_sent,
             "total_errors": total_errors,
-            "total_pending": max(0, total_messages - total_success - total_errors),
+            "total_pending": total_pending,
             "success_rate": success_rate,
+            "delivery_rate": delivery_rate,
+            "read_rate": read_rate,
             "unique_clients": len(unique_clients),
             "gdrive_synced": gdrive_count,
             "recent_projects": recent_projects
@@ -305,9 +348,9 @@ def get_general_metrics():
     except Exception as e:
         logger.error(f"Error computing general metrics: {e}")
         return {
-            "total_projects": 0, "total_messages": 0, "total_success": 0,
-            "total_errors": 0, "total_pending": 0, "success_rate": 0.0,
-            "unique_clients": 0, "gdrive_synced": 0, "recent_projects": []
+            "total_projects": 0, "total_messages": 0, "total_sent": 0, "total_delivered": 0, "total_read": 0,
+            "total_success": 0, "total_errors": 0, "total_pending": 0, "success_rate": 0.0, "delivery_rate": 0.0,
+            "read_rate": 0.0, "unique_clients": 0, "gdrive_synced": 0, "recent_projects": []
         }
 
 # --- FUNÇÕES DE CONTROLE DAS FILAS PERSISTENTES (CONVERSÃO & ENVIO) ---
